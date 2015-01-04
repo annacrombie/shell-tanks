@@ -1,0 +1,20 @@
+weapon_name=(
+	"cannon"
+	"mortar"
+	"nuke"
+)
+weapon_damage=(
+	"3"
+	"6"
+	"9"
+)
+weapon_ammo=(
+	"45"
+	"6"
+	"3"
+)
+weapon_icon_r=(
+	"+--"
+	"X=="
+	"=>>"
+)
