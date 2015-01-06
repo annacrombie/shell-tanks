@@ -58,7 +58,9 @@ function main_ {
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
 			points=$((points+1000))
-			rm -rf ./data/ailock ./data/tlock #ensure removal!
+			while [[ -f data/ailock ]] || [[ -f data/shot/* ]]; do
+				sleep 0.09
+			done
 			shop_
 			memory_ sh 1 20
 			ai_&
@@ -78,9 +80,6 @@ function main_ {
 		input_
 	done
 }
-#function network_ {
-
-#}
 function logos_ {
 	hcenter=$(( ( ${surface[1]} - 130 ) / 2 ))
 	hy=(25 26 27 28 29)
@@ -104,7 +103,7 @@ function logos_ {
 		echo -e "\033[${hy[0]};${hcenter}H        ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####      #####  ####  ##      ## ####  ##  ## ###### ###### ####        \033[${hy[1]};${hcenter}H   ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##        ##     ##  ## ###    ### ## ## ##  ##   ##   ##     ## ## +---  \033[${hy[2]};${hcenter}H << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ##      ##  ## ####  #### ####  ##  ##   ##   ###### ####  | D >>\033[${hy[3]};${hcenter}H   ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##    ##     ##  ## ## #### ## ##    ##  ##   ##   ##     ## ## +---  \033[${hy[4]};${hcenter}H        ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####      #####  ####  ##  ##  ## ##     ####    ##   ###### ## ##       "
 	elif [[ $1 = "humanvhuman" ]]; then
 		echo -e "\033[${hy[0]};${hcenter}H                 ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####    ##  ## ##  ## ##      ##   ##   ##  ##                  \033[${hy[1]};${hcenter}H            ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##       ##  ## ##  ## ###    ### ###### ### ## +---             \033[${hy[2]};${hcenter}H          << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ###### ##  ## ####  #### ##  ## ###### | D >>           \033[${hy[3]};${hcenter}H            ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##   ##  ## ##  ## ## #### ## ###### ## ### +---             \033[${hy[4]};${hcenter}H                 ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####    ##  ##  ####  ##  ##  ## ##  ## ##  ##                  "
-	elif [[ $1 = "0" ]]; then
+	elif [[ $1 = "local" ]]; then
 		echo -e "\033[${hy[0]};${hcenter}H                                               ##      ####    #####   ##   ##                                                    \033[${hy[1]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[2]};${hcenter}H                                        << A | ##     ##  ## ##      ##  ## ##     | D >>                                         \033[${hy[3]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[4]};${hcenter}H                                               ######  ####    ##### ##  ## ######                                                "
 	elif [[ $1 = "network" ]]; then
 		echo -e "\033[${hy[0]};${hcenter}H                                         ##  ## ###### ###### ##    ##  ####  ####  ## ##                                         \033[${hy[1]};${hcenter}H                                    ---+ ### ## ##       ##   ##    ## ##  ## ## ## ## ## +---                                    \033[${hy[2]};${hcenter}H                                  << A | ###### ######   ##   ## ## ## ##  ## ####  ####  | D >>                                  \033[${hy[3]};${hcenter}H                                    ---+ ## ### ##       ##   ###  ### ##  ## ## ## ## ## +---                                    \033[${hy[4]};${hcenter}H                                         ##  ## ######   ##   ##    ##  ####  ## ## ## ##                                         "
@@ -118,43 +117,37 @@ function title_screen_ {
 			logos_ big_title
 			sleep 0.2
 		done&
-		selection=("humanvhuman" "humanvcomputer")
-		mselection=(0 "network")
-		sel=0
-		mselection=0
-		slevel=0
+		selection0=("humanvhuman" "humanvcomputer")
+		selection1=("local" "network")
+		sel=(0 0 0)
 		while true; do
-			if [[ $slevel = 0 ]]; then
-				logos_ ${selection[$sel]}
-			elif [[ $slevel = 1 ]]; then
-				logos_ ${mselection[$sel]}
-				log_ 0 "logos_ ${mselection[$sel]} $sel"
+			if [[ ${sel[2]} = 0 ]]; then
+				logos_ ${selection0[${sel[${sel[2]}]}]}
+			elif [[ ${sel[2]} = 1 ]]; then
+				logos_ ${selection1[ ${sel[ ${sel[ 2 ]} ]} ]}
 			fi
 			read -s -n 1 key
 			if [[ -n $key ]]; then
 				if [[ $key = a ]] || [[ $key = A ]]; then
-					sel=0
+					sel[${sel[2]}]=0
 				elif [[ $key = d ]] || [[ $key = D ]]; then
-					sel=1
+					sel[${sel[2]}]=1
 				elif [[ $key =  ]] || [[ $key = w ]] || [[ $key = W ]]; then
-					if [[ $slevel = 1 ]]; then
-						slevel=0
+					if [[ ${sel[2]} = 1 ]]; then
+						sel[2]=0
 					fi
 				elif [[ $key = h ]] || [[ $key = H ]]; then
 					help_
 				fi
 			else
-				if [[ $slevel = 0 ]]; then
-					if [[ $sel = 0 ]]; then
-						echo -en "\033[32m"
-						logos_ ${selection[$sel]}
-						sleep 0.2
-						slevel=1
-						log_ 0 "setting slevel to 1"
+				audio_ -t fx hit/$((RANDOM%2))
+				if [[ ${sel[2]} = 0 ]]; then
+					echo -en "\033[32m"
+					logos_ ${selection0[${sel[${sel[2]}]}]}
+					sleep 0.2
+					if [[ ${sel[0]} = 0 ]]; then
+						sel[2]=1
 					elif [[ $sel = 1 ]]; then
-						echo -en "\033[32m"
-						logos_ ${selection[$sel]}
-						sleep 1
 						break
 					fi
 				elif [[ $slevel = 1 ]]; then
@@ -167,6 +160,9 @@ function title_screen_ {
 	fi
 	echo -en "\033[0m"
 }
+#function network_ {
+
+#}
 function update-wheels_ {
 	if [[ $direction = "r" ]]; then
 		wc=${wheels_tr[$wheels]}
@@ -664,10 +660,11 @@ function explosion_ {
 		audio_ -t fx hit/hard
 	fi
 	memory_ ml
-	posspos_0=($(memory_ pl 0))
-	posspos_1=($(memory_ pl 1))
 	showedexp=0
 	for ((i=0;i<${#buy[@]};i++)); do
+		posspos_0=($(memory_ pl 0))
+		posspos_1=($(memory_ pl 1))
+		touch data/explosionlock
 		if [[ $buy -gt 0 ]] && [[ $bux -gt 0 ]]; then
 			if [[ ${posspos_0[0]} -ge $((${bux[$i]}-1)) ]] && [[ ${posspos_0[0]} -le $((${bux[$i]}+1)) ]] && [[ ${posspos_0[1]} -ge $((${buy[$i]}-1)) ]] && [[ ${posspos_0[1]} -le $((${buy[$i]})) ]]; then
 				memory_ sh 0 $(( $(memory_ lh 0) - $((RANDOM%5+5)) ))
@@ -695,6 +692,9 @@ function explosion_ {
 		fi
 	done
 	memory_ ms
+	if [[ -f data/explosionlock ]]; then
+		rm data/explosionlock
+	fi
 }
 function display_health_ {
 	echo -e "\033[2;2Hp0: $(memory_ lh 0) health"
