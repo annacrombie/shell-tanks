@@ -13,7 +13,7 @@ if [[ ! -d bin ]] || [[ ! -d utils ]]; then
 	exit
 fi
 
-echo "\033[36mupdating build files (ver.txt and build.txt)"
+echo -e "\033[36mupdating build files (ver.txt and build.txt)"
 if [[ -f ver.txt ]]; then
 	nver=$(echo "$(cat ver.txt) + 0.1" | bc -l)
 	echo $nver > ver.txt
@@ -35,6 +35,10 @@ echo -e "\033[36mUploading Package..."
 read -p "ftp:username >> " usr
 read -s -p "ftp:password >> " pass
 echo ""
-curl ftp://162.238.92.18/www/boozon/st/ -u $usr:$pass -T ~/shell-tanks.tar.gz -T ./ver.txt -T ~/i.sh ftp://162.238.92.18/www/boozon/st/
+curl -u $usr:$pass -T "{$HOME/shell-tanks.tar.gz,ver.txt,$HOME/i.sh}" ftp://162.238.92.18/www/boozon/st/
+echo "uploading to github"
+read -p "commit message: " cm
+git commit -m "$cm"
+git push -u origin master
 
 cleanup_

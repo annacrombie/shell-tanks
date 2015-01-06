@@ -1,6 +1,6 @@
 v=$(curl -s -S http://boozon.net/st/ver.txt)
 if [[ -n $v ]]; then
-	if [[ $v -gt $(cat ../ver.txt) ]]; then
+	if [[ ${v//./} -gt $(cat ../ver.txt | sed 's/[.]//g') ]]; then
 		echo "Update found, installing..."
 		echo "Downloading Files..."
 		curl -# "boozon.net/st/shell-tanks.tar.gz" > "$HOME/.s.tar.gz"
