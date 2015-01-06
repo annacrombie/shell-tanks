@@ -36,9 +36,5 @@ read -p "ftp:username >> " usr
 read -s -p "ftp:password >> " pass
 echo ""
 curl -u $usr:$pass -T "{$HOME/shell-tanks.tar.gz,ver.txt,$HOME/i.sh}" ftp://162.238.92.18/www/boozon/st/
-echo "uploading to github"
-read -p "commit message: " cm
-git commit -m "$cm"
-git push -u origin master
 
 cleanup_
