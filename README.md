@@ -13,4 +13,4 @@ all of the sound effects were made by me using ableton live 8 and massive
 
 the title theme (temporary) is the song TANK! TANK! TANK! by Mayhem http://lapfoxtrax.com/track/tank-tank-tank
 
-all code written by me
+all shell code written by me
