@@ -58,8 +58,11 @@ function main_ {
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
 			points=$((points+1000))
-			while [[ -f data/ailock ]] || [[ -f data/shot/* ]]; do
-				sleep 0.09
+			for ((i=0;i<2;i++)); do
+				while [[ -f data/ailock ]] || [[ -f data/shot/* ]]; do
+					sleep 0.09
+				done
+				sleep 0.2
 			done
 			shop_
 			memory_ sh 1 20
@@ -81,83 +84,123 @@ function main_ {
 	done
 }
 function logos_ {
-	hcenter=$(( ( ${surface[1]} - 130 ) / 2 ))
-	hy=(25 26 27 28 29)
-	if [[ $1 = "big_title" ]]; then
-		center=$(( ( ${surface[1]} - 70 ) / 2 ))
-		tcolor=(1 2 3 4 5 6)
-		((tcycle++))
-		if [[ $tcycle = 6 ]]; then
-			tcycle=0
+	if [[ $logosize = small ]]; then
+		hcenter=$(( ( ${surface[1]} - 19 ) / 2 ))
+		hy=(4)
+		if [[ $1 = "title" ]]; then
+			center=$(( ( ${surface[1]} - 5 ) / 2 ))
+			tcolor=(1 2 3 4 5 6)
+			((tcycle++))
+			if [[ $tcycle = 6 ]]; then
+				tcycle=0
+			fi
+			echo -e "\033[3${tcolor[$tcycle]}m\033[2;${center}HSHELL\033[3;${center}HTANKS\033[0m"
+		elif [[ $1 = "humanvcomputer" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H HUMAN VS COMPUTER"
+		elif [[ $1 = "humanvhuman" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H  HUMAN VS HUMAN  "
+		elif [[ $1 = "local" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H       LOCAL      "
+		elif [[ $1 = "network" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H      NETWORK     "
 		fi
-		echo -e "\033[3${tcolor[$tcycle]}m\033[2;${center}H      ___           ___           ___                                 \n\033[3;${center}H     /\__\         /\  \         /\__\                                \n\033[4;${center}H    /:/ _/_        \:\  \       /:/ _/_                               \n\033[5;${center}H   /:/ /\  \        \:\  \     /:/ /\__\                              \n\033[6;${center}H  /:/ /::\  \   ___ /::\  \   /:/ /:/ _/_   ___     ___   ___     ___ \n\033[7;${center}H /:/_/:/\:\__\ /\  /:/\:\__\ /:/_/:/ /\__\ /\  \   /\__\ /\  \   /\__\ \\n\033[8;${center}H \:\/:/ /:/  / \:\/:/  \/__/ \:\/:/ /:/  / \:\  \ /:/  / \:\  \ /:/  /\n\033[9;${center}H  \::/ /:/  /   \::/__/       \::/_/:/  /   \:\  /:/  /   \:\  /:/  / \n\033[10;${center}H   \/_/:/  /     \:\  \        \:\/:/  /     \:\/:/  /     \:\/:/  /  \n\033[11;${center}H     /:/  /       \:\__\        \::/  /       \::/  /       \::/  /   \n\033[12;${center}H     \/__/         \/__/         \/__/         \/__/         \/__/    \n\033[13;${center}H                  ___           ___           ___           ___     \n\033[14;${center}H      ___        /  /\         /__/\         /__/|         /  /\    \n\033[15;${center}H     /  /\      /  /::\        \  \:\       |  |:|        /  /:/_   \n\033[16;${center}H    /  /:/     /  /:/\:\        \  \:\      |  |:|       /  /:/ /\  \n\033[17;${center}H   /  /:/     /  /:/~/::\   _____\__\:\   __|  |:|      /  /:/ /::\ \n\033[18;${center}H  /  /::\    /__/:/ /:/\:\ /__/::::::::\ /__/\_|:|____ /__/:/ /:/\:\ \\n\033[19;${center}H /__/:/\:\   \  \:\/:/__\/ \  \:\~~\~~\/ \  \:\/:::::/ \  \:\/:/~/:/\n\033[20;${center}H \__\/  \:\   \  \::/       \  \:\  ~~~   \  \::/~~~~   \  \::/ /:/ \n\033[21;${center}H      \  \:\   \  \:\        \  \:\        \  \:\        \__\/ /:/  \n\033[22;${center}H       \__\/    \  \:\        \  \:\        \  \:\         /__/:/   \n\033[23;${center}H                 \__\/         \__\/         \__\/         \__\/\033[0m"
-	elif [[ $1 = "small_title" ]]; then
-		center=$(( ( ${surface[1]} - 5 ) / 2 ))
-		tcolor=(1 2 3 4 5 6)
-		((tcycle++))
-		if [[ $tcycle = 6 ]]; then
-			tcycle=0
+	elif [[ $logosize = big ]]; then
+		hcenter=$(( ( ${surface[1]} - 130 ) / 2 ))
+		hy=(25 26 27 28 29)
+		hcolor=(1 6 3 4 5 6)
+		((hcycle++))
+		if [[ $hcycle = 6 ]]; then
+			hcycle=0
 		fi
-		echo -e "\033[3${tcolor[$tcycle]}m\033[2;${center}HSHELL\033[3;${center}HTANKS"
-	elif [[ $1 = "humanvcomputer" ]]; then
-		echo -e "\033[${hy[0]};${hcenter}H        ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####      #####  ####  ##      ## ####  ##  ## ###### ###### ####        \033[${hy[1]};${hcenter}H   ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##        ##     ##  ## ###    ### ## ## ##  ##   ##   ##     ## ## +---  \033[${hy[2]};${hcenter}H << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ##      ##  ## ####  #### ####  ##  ##   ##   ###### ####  | D >>\033[${hy[3]};${hcenter}H   ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##    ##     ##  ## ## #### ## ##    ##  ##   ##   ##     ## ## +---  \033[${hy[4]};${hcenter}H        ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####      #####  ####  ##  ##  ## ##     ####    ##   ###### ## ##       "
-	elif [[ $1 = "humanvhuman" ]]; then
-		echo -e "\033[${hy[0]};${hcenter}H                 ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####    ##  ## ##  ## ##      ##   ##   ##  ##                  \033[${hy[1]};${hcenter}H            ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##       ##  ## ##  ## ###    ### ###### ### ## +---             \033[${hy[2]};${hcenter}H          << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ###### ##  ## ####  #### ##  ## ###### | D >>           \033[${hy[3]};${hcenter}H            ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##   ##  ## ##  ## ## #### ## ###### ## ### +---             \033[${hy[4]};${hcenter}H                 ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####    ##  ##  ####  ##  ##  ## ##  ## ##  ##                  "
-	elif [[ $1 = "local" ]]; then
-		echo -e "\033[${hy[0]};${hcenter}H                                               ##      ####    #####   ##   ##                                                    \033[${hy[1]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[2]};${hcenter}H                                        << A | ##     ##  ## ##      ##  ## ##     | D >>                                         \033[${hy[3]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[4]};${hcenter}H                                               ######  ####    ##### ##  ## ######                                                "
-	elif [[ $1 = "network" ]]; then
-		echo -e "\033[${hy[0]};${hcenter}H                                         ##  ## ###### ###### ##    ##  ####  ####  ## ##                                         \033[${hy[1]};${hcenter}H                                    ---+ ### ## ##       ##   ##    ## ##  ## ## ## ## ## +---                                    \033[${hy[2]};${hcenter}H                                  << A | ###### ######   ##   ## ## ## ##  ## ####  ####  | D >>                                  \033[${hy[3]};${hcenter}H                                    ---+ ## ### ##       ##   ###  ### ##  ## ## ## ## ## +---                                    \033[${hy[4]};${hcenter}H                                         ##  ## ######   ##   ##    ##  ####  ## ## ## ##                                         "
+		if [[ $1 = "title" ]]; then
+			center=$(( ( ${surface[1]} - 70 ) / 2 ))
+			tcolor=(1 2 3 4 5 6)
+			((tcycle++))
+			if [[ $tcycle = 6 ]]; then
+				tcycle=0
+			fi
+			echo -e "\033[3${tcolor[$tcycle]}m\033[2;${center}H      ___           ___           ___                                 \n\033[3;${center}H     /\__\         /\  \         /\__\                                \n\033[4;${center}H    /:/ _/_        \:\  \       /:/ _/_                               \n\033[5;${center}H   /:/ /\  \        \:\  \     /:/ /\__\                              \n\033[6;${center}H  /:/ /::\  \   ___ /::\  \   /:/ /:/ _/_   ___     ___   ___     ___ \n\033[7;${center}H /:/_/:/\:\__\ /\  /:/\:\__\ /:/_/:/ /\__\ /\  \   /\__\ /\  \   /\__\ \\n\033[8;${center}H \:\/:/ /:/  / \:\/:/  \/__/ \:\/:/ /:/  / \:\  \ /:/  / \:\  \ /:/  /\n\033[9;${center}H  \::/ /:/  /   \::/__/       \::/_/:/  /   \:\  /:/  /   \:\  /:/  / \n\033[10;${center}H   \/_/:/  /     \:\  \        \:\/:/  /     \:\/:/  /     \:\/:/  /  \n\033[11;${center}H     /:/  /       \:\__\        \::/  /       \::/  /       \::/  /   \n\033[12;${center}H     \/__/         \/__/         \/__/         \/__/         \/__/    \n\033[13;${center}H                  ___           ___           ___           ___     \n\033[14;${center}H      ___        /  /\         /__/\         /__/|         /  /\    \n\033[15;${center}H     /  /\      /  /::\        \  \:\       |  |:|        /  /:/_   \n\033[16;${center}H    /  /:/     /  /:/\:\        \  \:\      |  |:|       /  /:/ /\  \n\033[17;${center}H   /  /:/     /  /:/~/::\   _____\__\:\   __|  |:|      /  /:/ /::\ \n\033[18;${center}H  /  /::\    /__/:/ /:/\:\ /__/::::::::\ /__/\_|:|____ /__/:/ /:/\:\ \\n\033[19;${center}H /__/:/\:\   \  \:\/:/__\/ \  \:\~~\~~\/ \  \:\/:::::/ \  \:\/:/~/:/\n\033[20;${center}H \__\/  \:\   \  \::/       \  \:\  ~~~   \  \::/~~~~   \  \::/ /:/ \n\033[21;${center}H      \  \:\   \  \:\        \  \:\        \  \:\        \__\/ /:/  \n\033[22;${center}H       \__\/    \  \:\        \  \:\        \  \:\         /__/:/   \n\033[23;${center}H                 \__\/         \__\/         \__\/         \__\/\033[0m"
+		elif [[ $1 = "humanvcomputer" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H        ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####      #####  ####  ##      ## ####  ##  ## ###### ###### ####        \033[${hy[1]};${hcenter}H   ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##        ##     ##  ## ###    ### ## ## ##  ##   ##   ##     ## ## +---  \033[${hy[2]};${hcenter}H << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ##      ##  ## ####  #### ####  ##  ##   ##   ###### ####  | D >>\033[${hy[3]};${hcenter}H   ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##    ##     ##  ## ## #### ## ##    ##  ##   ##   ##     ## ## +---  \033[${hy[4]};${hcenter}H        ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####      #####  ####  ##  ##  ## ##     ####    ##   ###### ## ##       "
+		elif [[ $1 = "humanvhuman" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                 ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####    ##  ## ##  ## ##      ##   ##   ##  ##                  \033[${hy[1]};${hcenter}H            ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##       ##  ## ##  ## ###    ### ###### ### ## +---             \033[${hy[2]};${hcenter}H          << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ###### ##  ## ####  #### ##  ## ###### | D >>           \033[${hy[3]};${hcenter}H            ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##   ##  ## ##  ## ## #### ## ###### ## ### +---             \033[${hy[4]};${hcenter}H                 ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####    ##  ##  ####  ##  ##  ## ##  ## ##  ##                  "
+		elif [[ $1 = "local" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                               ##      ####    #####   ##   ##                                                    \033[${hy[1]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[2]};${hcenter}H                                        << A | ##     ##  ## ##      ##  ## ##     | D >>                                         \033[${hy[3]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[4]};${hcenter}H                                               ######  ####    ##### ##  ## ######                                                "
+		elif [[ $1 = "network" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                         ##  ## ###### ###### ##    ##  ####  ####  ## ##                                         \033[${hy[1]};${hcenter}H                                    ---+ ### ## ##       ##   ##    ## ##  ## ## ## ## ## +---                                    \033[${hy[2]};${hcenter}H                                  << A | ###### ######   ##   ## ## ## ##  ## ####  ####  | D >>                                  \033[${hy[3]};${hcenter}H                                    ---+ ## ### ##       ##   ###  ### ##  ## ## ## ## ## +---                                    \033[${hy[4]};${hcenter}H                                         ##  ## ######   ##   ##    ##  ####  ## ## ## ##                                         "
+		elif [[ $1 = "exit" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                   ###### ##  ## ###### ######                                                    \033[${hy[1]};${hcenter}H                                              ---+ ##      ####    ##     ##   +---                                               \033[${hy[2]};${hcenter}H                                            << A | ######   ##     ##     ##   | D >>                                             \033[${hy[3]};${hcenter}H                                              ---+ ##      ####    ##     ##   +---                                               \033[${hy[4]};${hcenter}H                                                   ###### ##  ## ######   ##                                                      "
+		elif [[ $1 = "settings" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                      ####  ###### ###### ###### ###### ##  ##  #####   ####                                      \033[${hy[1]};${hcenter}H                                ---+ ##     ##       ##     ##     ##   ### ## ##      ##     +---                                \033[${hy[2]};${hcenter}H                              << A |  ####  ######   ##     ##     ##   ###### ##  ###  ####  | D >>                              \033[${hy[3]};${hcenter}H                                ---+     ## ##       ##     ##     ##   ## ### ##   ##     ## +---                                \033[${hy[4]};${hcenter}H                                      ####  ######   ##     ##   ###### ##  ##  #####   ####                                      "
+		fi
 	fi
+}
+function mainlogo_ {
+	touch ./data/tlock
+	while [[ -f ./data/tlock ]]; do
+		logos_ title
+		sleep 0.2
+	done&
 }
 function title_screen_ {
 	tcycle=0
-	if [[ ${surface[0]} -ge 25 ]] && [[ ${surface[1]} -ge 80 ]]; then
-		touch ./data/tlock
-		while [[ -f ./data/tlock ]]; do
-			logos_ big_title
-			sleep 0.2
-		done&
-		selection0=("humanvhuman" "humanvcomputer")
-		selection1=("local" "network")
-		sel=(0 0 0)
-		while true; do
-			if [[ ${sel[2]} = 0 ]]; then
-				logos_ ${selection0[${sel[${sel[2]}]}]}
-			elif [[ ${sel[2]} = 1 ]]; then
-				logos_ ${selection1[ ${sel[ ${sel[ 2 ]} ]} ]}
-			fi
-			read -s -n 1 key
-			if [[ -n $key ]]; then
-				if [[ $key = a ]] || [[ $key = A ]]; then
-					sel[${sel[2]}]=0
-				elif [[ $key = d ]] || [[ $key = D ]]; then
-					sel[${sel[2]}]=1
-				elif [[ $key =  ]] || [[ $key = w ]] || [[ $key = W ]]; then
-					if [[ ${sel[2]} = 1 ]]; then
-						sel[2]=0
-					fi
-				elif [[ $key = h ]] || [[ $key = H ]]; then
-					help_
-				fi
-			else
-				audio_ -t fx hit/$((RANDOM%2))
-				if [[ ${sel[2]} = 0 ]]; then
-					echo -en "\033[32m"
-					logos_ ${selection0[${sel[${sel[2]}]}]}
-					sleep 0.2
-					if [[ ${sel[0]} = 0 ]]; then
-						sel[2]=1
-					elif [[ $sel = 1 ]]; then
-						break
-					fi
-				elif [[ $slevel = 1 ]]; then
-					:
-				fi
-			fi
-		done
+	if [[ ${surface[0]} -ge 30 ]] && [[ ${surface[1]} -ge 130 ]]; then
+		logosize=big
 	else
-		logos_ small_title
+		logosize=small
 	fi
+	selection0=("humanvhuman" "humanvcomputer" "settings" "exit")
+	selection1=("local" "network")
+	sel=(0 0 0)
+	mainlogo_
+	while true; do
+		if [[ ${sel[2]} = 0 ]]; then
+			logos_ ${selection0[${sel[${sel[2]}]}]}
+		elif [[ ${sel[2]} = 1 ]]; then
+			logos_ ${selection1[ ${sel[ ${sel[ 2 ]} ]} ]}
+		fi
+		read -s -n 1 key
+		if [[ -n $key ]]; then
+			if [[ $key = a ]] || [[ $key = A ]]; then
+				sel[${sel[2]}]=$((${sel[${sel[2]}]}-1))
+			elif [[ $key = d ]] || [[ $key = D ]]; then
+				sel[${sel[2]}]=$((${sel[${sel[2]}]}+1))
+			elif [[ $key =  ]] || [[ $key = w ]] || [[ $key = W ]]; then
+				if [[ ${sel[2]} = 1 ]]; then
+					sel[2]=0
+				fi
+			elif [[ $key = h ]] || [[ $key = H ]]; then
+				help_
+			fi
+			if [[ ${sel[2]} = 0 ]]; then
+				if [[ ${sel[${sel[2]}]} -gt $((${#selection0[@]}-1)) ]]; then
+					sel[${sel[2]}]=$((${#selection0[@]}-1))
+				elif [[ ${sel[${sel[2]}]} -lt 0 ]]; then
+					sel[${sel[2]}]=0
+				fi
+			elif [[ ${sel[2]} = 1 ]]; then
+				if [[ ${sel[${sel[2]}]} -gt $((${#selection1[@]}-1)) ]]; then
+					sel[${sel[2]}]=$((${#selection1[@]}-1))
+				elif [[ ${sel[${sel[2]}]} -lt 0 ]]; then
+					sel[${sel[2]}]=0
+				fi
+			fi
+		else
+			audio_ -t fx hit/$((RANDOM%2))
+			if [[ ${sel[2]} = 0 ]]; then
+				echo -en "\033[32m"
+				logos_ ${selection0[${sel[${sel[2]}]}]}
+				sleep 0.2
+				if [[ ${sel[0]} = 0 ]]; then
+					sel[2]=1
+				elif [[ $sel = 1 ]]; then
+					break
+				fi
+			elif [[ $slevel = 1 ]]; then
+				:
+			fi
+		fi
+	done
 	echo -en "\033[0m"
 }
 #function network_ {
@@ -308,21 +351,25 @@ function shop_ {
 	stty $oldstty
 	while true; do
 		display_
-		tput cup 5 5
-		echo "+-=SHOP=--------------------+"
-		tput cup 6 5
-		echo "| 0 speed boost -- 2000 pts |"
-		tput cup 7 5
-		echo "| 1 cannonballs -- 1000 pts |"
-		tput cup 8 5
-		echo "| 2 mortars     -- 1500 pts |"
-		tput cup 9 5
-		echo "| 3 nukes       -- 2500 pts |"
-		tput cup 10 5
-		echo "| 4 restore hp  -- 500  pts |"
-		tput cup 11 5
-		echo "+---------------------------+"
-		tput cup 12 5
+		echo -e "\033[5;6H+-=SHOP=--------------------+"
+		for ((i=0;i<${#weapon_name[@]};i++)); do
+			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts |"
+		done
+		#tput cup 5 5
+		#echo "+-=SHOP=--------------------+"
+		#tput cup 6 5
+		#echo "| 0 speed boost -- 2000 pts |"
+		#tput cup 7 5
+		#echo "| 1 cannonballs -- 1000 pts |"
+		#tput cup 8 5
+		#echo "| 2 mortars     -- 1500 pts |"
+		#tput cup 9 5
+		#echo "| 3 nukes       -- 2500 pts |"
+		#tput cup 10 5
+		#echo "| 4 restore hp  -- 500  pts |"
+		#tput cup 11 5
+		#echo "+---------------------------+"
+		#tput cup 12 5
 		read -p "item to buy, x to cancel >> " item
 		if [[ $item = x ]]; then
 			break
@@ -736,16 +783,20 @@ function display_stats_ {
 		dammo=" ${mweapon_ammo[$weapon]}"
 	fi
 	echo -e "\033[1;$((${surface[1]}-27))H+-----------+----------------+"
-	echo -e "\033[2;$((${surface[1]}-27))H| ang. $dang""˚ |weap. ${weapon_name[$weapon]} $dammo|"
+	echo -e "\033[2;$((${surface[1]}-27))H| ang. $dang""˚ |weap. ${weapon_name[$weapon]}, $dammo|"
 	echo -e "\033[3;$((${surface[1]}-27))H+-----------+----------------+"
 	echo -e "\033[4;$((${surface[1]}-27))HPoints: $(printf "%-10s %s" $points)"
 }
 function display_ {
+	if [[ -f ./data/tlock ]]; then
+		rm ./data/tlock
+	fi
 	echo -e "\033[1;1H"
 	draw_
 	place-items_ tank
 	display_stats_
 	display_health_
+	mainlogo_
 }
 function help_ {
 	log_ 0 "helping..."
@@ -818,18 +869,19 @@ function load_weaps_ {
 		if [[ $wnl -gt 7 ]]; then
 			weapon_name[$i]="  2lng,"
 		elif [[ $wnl -lt 7 ]]; then
-			weapon_name[$i]="$(printf "%-6s %s" ${weapon_name[$i]},)"
+			weapon_name[$i]="$(printf "%-6s %s" ${weapon_name[$i]})"
 		else
-			weapon_name[$i]=${weapon_name[$i]}","
+			weapon_name[$i]=${weapon_name[$i]}
 		fi
 		if [[ ! ${weapon_damage[$i]} ]] || [[ ! ${weapon_ammo[$i]} ]] || [[ ! ${weapon_icon_r[$i]} ]]; then
 			log_ 1 "error parsing weapon file"
 			break
 		fi
-		mweapon_ammo=(45 10 10)
+		mweapon_ammo[$i]=0
 		wcon=($(echo ${weapon_icon_r[$i]} | sed 's/./& /g;s/>/</g'))
 		weapon_icon_l[$i]="${wcon[2]}${wcon[1]}${wcon[0]}"
 	done
+	mweapon_ammo[0]=45
 }
 function game_over_ {
 	echo -e "\033[7;$((${surface[0]}-4))H+---------------+"
