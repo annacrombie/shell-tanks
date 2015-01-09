@@ -55,8 +55,8 @@ function main_ {
 	memory_ sh 1 $health
 	display_
 	update-wheels_
-	ai_&
-	#listen_&
+	#ai_&
+	listener_&
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
 			points=$((points+1000))
@@ -83,6 +83,7 @@ function main_ {
 		plit=true
 		sleep 0.$((speed-smod+momentum))
 		input_
+		send_
 	done
 }
 function logos_ {
@@ -205,9 +206,6 @@ function title_screen_ {
 	done
 	echo -en "\033[0m"
 }
-#function network_ {
-
-#}
 function update-wheels_ {
 	if [[ $direction = "r" ]]; then
 		wc=${wheels_tr[$wheels]}
@@ -567,29 +565,29 @@ function input_ {
 	if [[ -n $key ]]; then
 		if [[ $key = ${controls[0]} ]]; then
 			pos[0]=$((${pos[0]}-1))
-			if [[ $lk = l ]]; then
-				((momentum--))
-				if [[ $momentum -lt -20 ]]; then
-					momentum=-20
-				fi
-			else
-				momentum=0
-			fi
-			lk="l"
+			#if [[ $lk = l ]]; then
+			#	((momentum--))
+			#	if [[ $momentum -lt -15 ]]; then
+			#		momentum=-15
+			#	fi
+			#else
+			#	momentum=0
+			#fi
+			#lk="l"
 			direction="l"
 			update-wheels_
 			poscorrect_
 		elif [[ $key = ${controls[1]} ]]; then
 			pos[0]=$((${pos[0]}+1))
-			if [[ $lk = r ]]; then
-				((momentum--))
-				if [[ $momentum -lt -20 ]]; then
-					momentum=-20
-				fi
-			else
-				momentum=0
-			fi
-			lk="r"
+			#if [[ $lk = r ]]; then
+			#	((momentum--))
+			#	if [[ $momentum -lt -15 ]]; then
+			#		momentum=-15
+			#	fi
+			#else
+			#	momentum=0
+			#fi
+			#lk="r"
 			direction="r"
 			update-wheels_
 			poscorrect_

@@ -50,7 +50,7 @@ function launch_ {
 	import_ audio.sh
 	import_ physics.sh
 	import_ shell-tanks.sh $(tput lines) $(tput cols)
-	import_ menu.sh
+	import_ network.sh
 	log_ 0 "Import Finished"
 	audio_ -t fx startup
 	if [[ $mode = 0 ]]; then
