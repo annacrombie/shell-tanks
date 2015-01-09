@@ -22,6 +22,8 @@ function shanks2ini_ {
 	wheels_tr=("-" '\' "|" "/")
 	wheels_tl=("-" "/" "|" '\')
 	wheels=0
+	momentum=0
+	plit=true
 	direction="r"
 
 	weapon=0
@@ -75,11 +77,11 @@ function main_ {
 			break
 		fi
 		memory_ ck 0 ms
-		if [[ $pi = true ]]; then
+		if [[ $plit = true ]]; then
 			place-items_
 		fi
-		pi=true
-		sleep 0.$((speed-smod))
+		plit=true
+		sleep 0.$((speed-smod+momentum))
 		input_
 	done
 }
@@ -565,15 +567,34 @@ function input_ {
 	if [[ -n $key ]]; then
 		if [[ $key = ${controls[0]} ]]; then
 			pos[0]=$((${pos[0]}-1))
+			if [[ $lk = l ]]; then
+				((momentum--))
+				if [[ $momentum -lt -20 ]]; then
+					momentum=-20
+				fi
+			else
+				momentum=0
+			fi
+			lk="l"
 			direction="l"
 			update-wheels_
 			poscorrect_
 		elif [[ $key = ${controls[1]} ]]; then
 			pos[0]=$((${pos[0]}+1))
+			if [[ $lk = r ]]; then
+				((momentum--))
+				if [[ $momentum -lt -20 ]]; then
+					momentum=-20
+				fi
+			else
+				momentum=0
+			fi
+			lk="r"
 			direction="r"
 			update-wheels_
 			poscorrect_
 		elif [[ $key = ${controls[2]} ]]; then
+			lk="x"
 			memory_ sl
 			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 3 ]] && [[ $((SECONDS-1)) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
 				((shots_fired++))
@@ -584,26 +605,33 @@ function input_ {
 			fi
 			poscorrect_
 		elif [[ $key = ${controls[3]} ]]; then
+			lk="x"
 			adjust_angle_ "0"
-			pi=false
+			plit=false
 		elif [[ $key = ${controls[4]} ]]; then
+			lk="x"
 			adjust_angle_ "1"
-			pi=false
+			plit=false
 		elif [[ $key = ${controls[5]} ]]; then
+			lk="x"
 			switch_weapon_ "0"
-			pi=false
+			plit=false
 		elif [[ $key = ${controls[6]} ]]; then
+			lk="x"
 			switch_weapon_ "1"
-			pi=false
+			plit=false
 		elif [[ $key = ${controls[7]} ]]; then
+			lk="x"
 			help_
 			read -s -n 1
 			display_
 		fi
 		if [[ $developer = 1 ]]; then
 			if [[ $key = l ]]; then
+				lk="x"
 				display_
 			elif [[ $key = c ]]; then
+				lk="x"
 				tput cnorm
 				echo -en "\033[2;2H"
 				interactive_
@@ -611,6 +639,7 @@ function input_ {
 				stty -echo -icanon time 0 min 0
 				display_
 			elif [[ $key = p ]]; then
+				lk="x"
 				if [[ -f ./data/ailock ]]; then
 					rm ./data/ailock
 				else
