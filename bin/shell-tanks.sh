@@ -725,7 +725,10 @@ function explosion_ {
 		done
 	done
 	#from so
-	readarray -t sbup < <(printf '%s\0' "${bup[@]}" | sort -z | xargs -0n1)
+	oldifs=$IFS
+	IFS=$'\n' sbup=($(sort <<<"${bup[*]}"))
+	IFS=$oldifs
+	#readarray -t sbup < <(printf '%s\0' "${bup[@]}" | sort -z | xargs -0n1)
 	bup=(${sbup[@]})
 	if [[ $weapon != 2 ]]; then
 		audio_ -t fx hit/$((RANDOM%2))
