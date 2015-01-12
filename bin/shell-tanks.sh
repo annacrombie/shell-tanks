@@ -25,19 +25,21 @@ function shanks2ini_ {
 	momentum=0
 	plit=true
 	direction="r"
+	isai=false
+	aikilled=0
 
 	weapon=0
 	load_weaps_
 
 	controls=(
-		"a" # move left
-		"d" # move right
-		"f" # fire
-		"e" # adjust angle right
-		"q" # adjust angle left
-		"w" # switch weapon
-		"s" # switch weapon
-		"h" # help
+		"Aa" # move left
+		"Dd" # move right
+		"Ff" # fire
+		"Ee" # adjust angle right
+		"Qq" # adjust angle left
+		"Ww" # switch weapon
+		"Ss" # switch weapon
+		"Hh" # help
 	)
 	control_desc=("move_left" "move_right" "fire" "adjust_angle_right" "adjust_angle_left" "switch_weapon" "switch_weapon" "help")
 
@@ -55,19 +57,24 @@ function main_ {
 	memory_ sh 1 $health
 	display_
 	update-wheels_
-	#ai_&
-	listener_&
+	ai_&
+	#experimental split-shot
+	#shottype=split
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
-			points=$((points+1000))
-			for ((i=0;i<2;i++)); do
-				while [[ -f data/ailock ]] || [[ -f data/shot/* ]]; do
-					sleep 0.09
-				done
-				sleep 0.2
-			done
+			((aikilled++))
+			points=$(( points + ( 1000 + ( 100 * aikilled ) ) ))
+			rm -rf ./data/shot ./data/tlock
+			mkdir data/shot
+			#for ((i=0;i<2;i++)); do
+			#	while [[ -f data/ailock ]] || [[ -f data/shot/* ]]; do
+			#		sleep 0.09
+			#	done
+			#done
 			shop_
-			memory_ sh 1 20
+			mainlogo_
+			memory_ sh 0 $health
+			memory_ sh 1 $(( health + ( 5 * aikilled ) ))
 			ai_&
 		fi
 		if [[ $(memory_ lh 0) -lt 1 ]]; then
@@ -83,7 +90,6 @@ function main_ {
 		plit=true
 		sleep 0.$((speed-smod+momentum))
 		input_
-		send_
 	done
 }
 function logos_ {
@@ -140,6 +146,7 @@ function logos_ {
 }
 function mainlogo_ {
 	touch ./data/tlock
+	log_ 0 "made tlocks"
 	while [[ -f ./data/tlock ]]; do
 		logos_ title
 		sleep 0.2
@@ -153,7 +160,7 @@ function title_screen_ {
 		logosize=small
 	fi
 	selection0=("humanvhuman" "humanvcomputer" "settings" "exit")
-	selection1=("local" "network")
+	selection1=("local") #"network")
 	sel=(0 0 0)
 	mainlogo_
 	while true; do
@@ -244,8 +251,17 @@ function place-items_ {
 				echo -e "\033[$((${oipos[1]}-1));$((${oipos[0]}))H  \033[${oipos[1]};$((${oipos[0]}+2))H "
 			fi
 		elif [[ $1 = projectile ]]; then
-			rchar="_"
+			rchar="_" maxh=0 breaknext=false
 			for ((i=0;i<${#points[@]};i++)); do
+				if [[ ${points[$i]} -gt $maxh ]]; then
+					maxh=${points[$i]}
+				fi
+			done
+			log_ 0 "max height $maxh"
+			for ((i=0;i<${#points[@]};i++)); do
+				if [[ ! -d ./data/shot ]]; then
+					break
+				fi
 				memory_ ml
 				if [[ $3 = 0 ]]; then
 					shot_x=$((i+${pos[0]}+1))
@@ -258,6 +274,9 @@ function place-items_ {
 					if [[ $i != 1 ]]; then
 						oldShot=($((oldshot_x+1)) $(echo $((${points[$((i-1))]}-${surface[0]}-1)) | sed 's/-//g'))
 						echo -e "\033[${oldShot[1]};${oldShot[0]}H$rchar"
+					fi
+					if [[ $breaknext = true ]]; then
+						break
 					fi
 					#invert the y
 					pointsInverted=$(echo $((${points[$i]}-${surface[0]}-1)) | sed 's/-//g')
@@ -280,12 +299,21 @@ function place-items_ {
 					echo -e "\033[$pointsInverted;$((shot_x+1))H*"
 					sleep 0.2
 
+					if [[ $shottype = split ]] && [[ ${points[$i]} = $maxh ]]; then
+						log_ 0 "shot # $2 split"
+						rm data/shot/$2
+						firesplit_ $shot_x ${points[$i]}&
+						breaknext=true
+					fi
+
+
 					#if [[ ${sb[0]} = "#" ]] || [[ ${sb[1]} = "#" ]] || [[ ${sb[2]} = "#" ]]; then
 					if [[ ${sb[4]} = "#" ]] || [[ $((${#points[@]}-1)) = $i ]]; then
 						log_ 0 "shot # $2 hit"
 						explosion_ $shot_x ${points[$i]}
-						rm data/shot/$2
-						tput sgr0
+						if [[ $shottype != beensplit ]]; then
+							rm data/shot/$2
+						fi
 						break
 					fi
 				fi
@@ -295,6 +323,19 @@ function place-items_ {
 	else
 		tank_
 	fi
+}
+function firesplit_ {
+	pos=($1 $2)
+	for ((i=0;i<$((RANDOM%3+1));i++)); do
+		achoice=$((RANDOM%2))
+		if [[ $achoice = 0 ]]; then
+			rangle=$((angle-RANDOM%35))
+		elif [[ $achoice = 1 ]]; then
+			rangle=$((angle-RANDOM%35))
+		fi
+		shottype=beensplit
+		fire_ -a $rangle&
+	done
 }
 function tank_ {
 	if [[ $1 = surround ]]; then
@@ -311,6 +352,9 @@ function tank_ {
 		fell=0
 		lastsleep=0
 		while [[ ${grnd[@]} = "_ _ _" ]]; do
+			if [[ $isai = true ]] && [[ ! -f data/ailock ]]; then
+				break
+			fi
 			place-items_ tank
 			orientation=1
 			pos[1]=$((${pos[1]}-1))
@@ -328,7 +372,6 @@ function tank_ {
 		elif [[ ${wwb[2]} = "#" ]] && [[ ${wwb[4]} = "#" ]]; then
 			pos=(${moldpos[@]})
 		fi
-
 		if [[ ${wwb[0]} = "#" ]]; then
 			orientation=0
 		elif [[ ${wwb[2]} = "#" ]]; then
@@ -349,89 +392,27 @@ function tank_ {
 function shop_ {
 	tput cnorm
 	stty $oldstty
+	bLg=2
 	while true; do
-		display_
 		echo -e "\033[5;6H+-=SHOP=--------------------+"
 		for ((i=0;i<${#weapon_name[@]};i++)); do
-			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts |"
+			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts      |"
 		done
-		#tput cup 5 5
-		#echo "+-=SHOP=--------------------+"
-		#tput cup 6 5
-		#echo "| 0 speed boost -- 2000 pts |"
-		#tput cup 7 5
-		#echo "| 1 cannonballs -- 1000 pts |"
-		#tput cup 8 5
-		#echo "| 2 mortars     -- 1500 pts |"
-		#tput cup 9 5
-		#echo "| 3 nukes       -- 2500 pts |"
-		#tput cup 10 5
-		#echo "| 4 restore hp  -- 500  pts |"
-		#tput cup 11 5
-		#echo "+---------------------------+"
-		#tput cup 12 5
-		read -p "item to buy, x to cancel >> " item
+		echo -e "\033[$((6+i));6H+---------------------------+"
+		read -p "$(echo -e "\033[$((6+i+1));6HItem to buy >> ")" item
 		if [[ $item = x ]]; then
 			break
-		elif [[ $item -ge 0 ]] && [[ $item -le 4 ]]; then
-			if [[ $item = 0 ]]; then
-				if [[ $points -ge 2000 ]]; then
-					if [[ $smod -lt 25 ]]; then
-						points=$((points-2000))
-						smod=$((smod+5))
-						tput cup 13 5
-						echo "Speed boosted"
-					else
-						tput cup 13 5
-						echo "speed at max"
-					fi
-				else
-					tput cup 13 5
-					echo "You don't have enough points for speed boost!"
-				fi
-			elif [[ $item = 1 ]]; then
-				if [[ $points -ge 1000 ]]; then
-					points=$((points-2000))
-					mweapon_ammo[0]=${weapon_ammo[0]}
-					tput cup 13 5
-					echo "Bought cannonballs"
-				else
-					tput cup 13 5
-					echo "You don't have enough points for cannonballs!"
-				fi
-			elif [[ $item = 2 ]]; then
-				if [[ $points -ge 1500 ]]; then
-					points=$((points-1500))
-					mweapon_ammo[1]=${weapon_ammo[1]}
-					tput cup 13 5
-					echo "Bought mortars"
-				else
-					tput cup 13 5
-					echo "You don't have enough points for mortars!"
-				fi
-			elif [[ $item = 3 ]]; then
-				if [[ $points -ge 2500 ]]; then
-					points=$((points-2500))
-					mweapon_ammo[2]=${weapon_ammo[2]}
-					tput cup 13 5
-					echo "Bought nukes"
-				else
-					tput cup 13 5
-					echo "You don't have enough points for nukes!"
-				fi
-			elif [[ $item = 4 ]]; then
-				if [[ $points -ge 500 ]]; then
-					points=$((points-500))
-					memory_ sh 0 20
-					health=20
-					tput cup 13 5
-					echo "Restored to full health"
-				else
-					tput cup 13 5
-					echo "You don't have enough points to restore health!"
-				fi
+		elif [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
+			if [[ $points -ge ${weapon_cost[$item]} ]]; then
+				points=$((points-${weapon_cost[$item]}))
+				echo -e "\033[$((6+i+bLg));6Hbought ${weapon_name[$item]} ammo"
+			else
+				echo -e "\033[$((6+i+bLg));6Hyou don't have enough points for ${weapon_name[$item]}"
 			fi
+		else
+			echo -e "\033[$((6+i+bLg));6Hunknown item $item"
 		fi
+		((bLg++))
 	done
 	tput civis
 	stty -echo -icanon time 0 min 0
@@ -439,7 +420,9 @@ function shop_ {
 }
 function ai_ {
 	#initialize the ai, make sure it spawns at a different location
-	sleep 3
+	touch data/ailock
+	isai=true
+	#sleep 3
 	ai_tick=0.3
 	shots_fired=1000
 	epos=($((RANDOM%$((${surface[1]}-2))+2)) $((RANDOM%$((${surface[0]}-15))+13)))
@@ -448,7 +431,6 @@ function ai_ {
 	done
 	pos=(${epos[@]})
 	player_color=$enemy_color
-	touch data/ailock
 
 	while [[ -f data/ailock ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
@@ -463,7 +445,7 @@ function ai_ {
 		edist=$(echo $((${ppos[0]}-${pos[0]})) | sed 's/-//g')
 		if [[ $edist -lt 11 ]] && [[ $edist -gt 9 ]]; then
 			if [[ $((${ppos[0]}-${pos[0]})) -lt 0 ]]; then
-				while [[ $angle != 135 ]]; do
+				while [[ $angle != 135 ]] && [[ -f data/ailock ]]; do
 					if [[ $edist -lt 11 ]] && [[ $edist -gt 9 ]]; then
 						adjust_angle_ 1 ai
 						sleep $ai_tick
@@ -472,7 +454,7 @@ function ai_ {
 					fi
 				done
 			elif [[ $((${ppos[0]}-${pos[0]})) -gt 0 ]]; then
-				while [[ $angle != 45 ]]; do
+				while [[ $angle != 45 ]] && [[ -f data/ailock ]]; do
 					if [[ $edist -lt 11 ]] && [[ $edist -gt 9 ]]; then
 					adjust_angle_ 0 ai
 					sleep $ai_tick
@@ -532,8 +514,13 @@ function generate-map_ {
 			eval map$i[$j]="_"
 		done
 	done
-	height=$((RANDOM%4+6))
+	height=$((RANDOM%$((${surface[0]}/4))+$((${surface[0]}/4))))
 	lhc=0
+	if [[ $height -lt 5 ]]; then
+		height=5
+	elif [[ $height -ge $((${surface[0]}/3)) ]]; then
+		height=$((${surface[0]}/3))
+	fi
 	for ((i=0;i<${surface[1]};i++)); do
 		for ((j=0;j<$height;j++)); do
 			eval map$j[\$i]=\"#\"
@@ -544,10 +531,10 @@ function generate-map_ {
 			else
 				height=$((height+1))
 			fi
-			if [[ $height -lt 3 ]]; then
-				height=3
-			elif [[ $height -gt 15 ]]; then
-				height=15
+			if [[ $height -lt 5 ]]; then
+				height=5
+			elif [[ $height -ge $((${surface[0]}/2)) ]]; then
+				height=$((${surface[0]}/2))
 			fi
 			lhc=$((RANDOM%2))
 		else
@@ -563,7 +550,7 @@ function input_ {
 	memory_ ps 0
 	moldpos=(${pos[@]})
 	if [[ -n $key ]]; then
-		if [[ $key = ${controls[0]} ]]; then
+		if [[ $key = [${controls[0]}] ]]; then
 			pos[0]=$((${pos[0]}-1))
 			#if [[ $lk = l ]]; then
 			#	((momentum--))
@@ -577,7 +564,7 @@ function input_ {
 			direction="l"
 			update-wheels_
 			poscorrect_
-		elif [[ $key = ${controls[1]} ]]; then
+		elif [[ $key = [${controls[1]}] ]]; then
 			pos[0]=$((${pos[0]}+1))
 			#if [[ $lk = r ]]; then
 			#	((momentum--))
@@ -591,7 +578,7 @@ function input_ {
 			direction="r"
 			update-wheels_
 			poscorrect_
-		elif [[ $key = ${controls[2]} ]]; then
+		elif [[ $key = [${controls[2]}] ]]; then
 			lk="x"
 			memory_ sl
 			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 3 ]] && [[ $((SECONDS-1)) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
@@ -602,23 +589,23 @@ function input_ {
 				display_stats_
 			fi
 			poscorrect_
-		elif [[ $key = ${controls[3]} ]]; then
+		elif [[ $key = [${controls[3]}] ]]; then
 			lk="x"
 			adjust_angle_ "0"
 			plit=false
-		elif [[ $key = ${controls[4]} ]]; then
+		elif [[ $key = [${controls[4]}] ]]; then
 			lk="x"
 			adjust_angle_ "1"
 			plit=false
-		elif [[ $key = ${controls[5]} ]]; then
+		elif [[ $key = [${controls[5]}] ]]; then
 			lk="x"
 			switch_weapon_ "0"
 			plit=false
-		elif [[ $key = ${controls[6]} ]]; then
+		elif [[ $key = [${controls[6]}] ]]; then
 			lk="x"
 			switch_weapon_ "1"
 			plit=false
-		elif [[ $key = ${controls[7]} ]]; then
+		elif [[ $key = [${controls[7]}] ]]; then
 			lk="x"
 			help_
 			read -s -n 1
@@ -643,6 +630,10 @@ function input_ {
 				else
 					ai_&
 				fi
+			elif [[ $key = n ]]; then
+				for ((i=0;i<${#mweapon_ammo[@]};i++)); do
+					mweapon_ammo[$i]=99
+				done
 			fi
 		fi
 	fi
@@ -681,7 +672,12 @@ function adjust_angle_ {
 }
 function fire_ {
 	audio_ -t fx fire/$((RANDOM%4))
-	touch data/shot/$shots_fired
+	if [[ $shottype != beensplit ]]; then
+		touch data/shot/$shots_fired
+	fi
+	if [[ $1 = "-a" ]]; then
+		angle=$2
+	fi
 	if [[ $angle -gt 90 ]]; then
 		cangle=($((90-(angle-90))) 1)
 	elif [[ $angle -le 90 ]]; then
@@ -724,10 +720,13 @@ function explosion_ {
 			d=$(( ${d1//-/} + ${d2//-/} ))
 			#the further away from the origin, the less likely a block is to explode
 			if [[ $d -le 0 ]] || [[ $((RANDOM%d)) = 0 ]]; then
-				bux+=($pbux) buy+=($pbuy)
+				bup+=($d"."$pbux"."$pbuy)
 			fi
 		done
 	done
+	#from so
+	readarray -t sbup < <(printf '%s\0' "${bup[@]}" | sort -z | xargs -0n1)
+	bup=(${sbup[@]})
 	if [[ $weapon != 2 ]]; then
 		audio_ -t fx hit/$((RANDOM%2))
 	else
@@ -735,33 +734,37 @@ function explosion_ {
 	fi
 	memory_ ml
 	showedexp=0
-	for ((i=0;i<${#buy[@]};i++)); do
+	for ((i=0;i<${#bup[@]};i++)); do
 		posspos_0=($(memory_ pl 0))
 		posspos_1=($(memory_ pl 1))
+		bup1=(${bup[$i]#*.})
 		touch data/explosionlock
-		if [[ $buy -gt 0 ]] && [[ $bux -gt 0 ]]; then
-			if [[ ${posspos_0[0]} -ge $((${bux[$i]}-1)) ]] && [[ ${posspos_0[0]} -le $((${bux[$i]}+1)) ]] && [[ ${posspos_0[1]} -ge $((${buy[$i]}-1)) ]] && [[ ${posspos_0[1]} -le $((${buy[$i]})) ]]; then
+		if [[ ${bup1%.*} -gt 0 ]] && [[ ${bup1#*.} -gt 0 ]]; then
+			oldlevel=$level
+			level=${bup[$i]%%.*}
+			if [[ $level -gt $oldlevel ]]; then
+				sleep 0.1
+			fi
+			if [[ ${posspos_0[0]} -ge $((${bup1%.*}-1)) ]] && [[ ${posspos_0[0]} -le $((${bup1%.*}+1)) ]] && [[ ${posspos_0[1]} -ge $((${bup1#*.}-1)) ]] && [[ ${posspos_0[1]} -le $((${bup1#*.})) ]]; then
 				memory_ sh 0 $(( $(memory_ lh 0) - $((RANDOM%5+5)) ))
 				showedexp=1
 				display_health_
 				log_ 0 "hit 0"
 			fi
-			if [[ ${posspos_1[0]} -ge $((${bux[$i]}-1)) ]] && [[ ${posspos_1[0]} -le $((${bux[$i]}+1)) ]] && [[ ${posspos_1[1]} -ge $((${buy[$i]}-1)) ]] && [[ ${posspos_1[1]} -le $((${buy[$i]})) ]]; then
+			if [[ ${posspos_1[0]} -ge $((${bup1%.*}-1)) ]] && [[ ${posspos_1[0]} -le $((${bup1%.*}+1)) ]] && [[ ${posspos_1[1]} -ge $((${bup1#*.}-1)) ]] && [[ ${posspos_1[1]} -le $((${bup1#*.})) ]]; then
 				memory_ sh 1 $(( $(memory_ lh 1) - $((RANDOM%5+5)) ))
 				display_health_
 				showedexp=1
 				log_ 0 "hit 1"
 			fi
-			eval map${buy[$i]}[\${bux[$i]}]=\"_\"
-			local invy=$((${buy[$i]}-${surface[0]}-1))
+			eval map${bup1#*.}[\${bup1%.*}]=\"_\"
+			local invy=$((${bup1#*.}-${surface[0]}-1))
 			local invy=${invy//-/}
 			if [[ $showedexp = 0 ]]; then
-				echo -e "\033[$invy;$((${bux[$i]}+2))H\033[$((30+explosion_color))m*"
+				echo -e "\033[$invy;$((${bup1%.*}+2))H\033[$((30+explosion_color))m*"&&sleep 0.1&&echo -e "\033[$invy;$((${bup1%.*}+2))H\033[0m "&
 			else
-				echo -e "\033[$invy;$((${bux[$i]}+2))H\033[31m*"
+				echo -e "\033[$invy;$((${bup1%.*}+2))H\033[31m*"&&sleep 0.1&&echo -e "\033[$invy;$((${bup1%.*}+2))H\033[0m "&
 			fi
-			sleep 0.1
-			echo -e "\033[$invy;$((${bux[$i]}+2))H\033[0m "
 			showedexp=0
 		fi
 	done
@@ -817,20 +820,25 @@ function display_stats_ {
 function display_ {
 	if [[ -f ./data/tlock ]]; then
 		rm ./data/tlock
+		wastlock=true
+	else
+		wastlock=false
 	fi
-	echo -e "\033[1;1H"
+	echo -e "\033[0;0H"
 	draw_
 	place-items_ tank
 	display_stats_
 	display_health_
-	mainlogo_
+	if [[ $wastlock = true ]]; then
+		mainlogo_
+	fi
 }
 function help_ {
 	log_ 0 "helping..."
 	hd=""
 	hl=2
 	for ((i=0;i<${#controls[@]};i++)); do
-		hd="$(echo -e "$hd\n""| ${controls[$i]} ${control_desc[$i]} |")"
+		hd="$(echo -e "$hd\n""| ${controls[$i]:1} ${control_desc[$i]} |")"
 	done
 	hb="+"
 	log_ 0 $(echo "$hd" | sed -n '2p')
@@ -896,7 +904,7 @@ function load_weaps_ {
 		if [[ $wnl -gt 7 ]]; then
 			weapon_name[$i]="  2lng,"
 		elif [[ $wnl -lt 7 ]]; then
-			weapon_name[$i]="$(printf "%-6s %s" ${weapon_name[$i]})"
+			weapon_name[$i]="$(printf "%-6s" ${weapon_name[$i]})"
 		else
 			weapon_name[$i]=${weapon_name[$i]}
 		fi
@@ -911,6 +919,7 @@ function load_weaps_ {
 	mweapon_ammo[0]=45
 }
 function game_over_ {
+	rm ./data/tlock
 	echo -e "\033[7;$((${surface[0]}-4))H+---------------+"
 	echo -e "\033[8;$((${surface[0]}-4))H|-- GAME OVER --| - press any key"
 	echo -e "\033[9;$((${surface[0]}-4))H+---------------+"
@@ -920,7 +929,7 @@ function game_over_ {
 	cleanup_
 }
 function shanks2cleanup_ {
-	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms
+	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot
 	tput cnorm
 }
 shanks2ini_ "$@"
