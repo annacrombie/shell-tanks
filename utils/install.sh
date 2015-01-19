@@ -1,5 +1,5 @@
 echo "downloading shell-tanks tarball to $HOME/.s.tar.gz..."
-curl -# "boozon.net/st/shell-tanks.tar.gz" > "$HOME/.s.tar.gz"
+curl -# "pointclearfarm.org/boozon/st/shell-tanks.tar.gz" > "$HOME/.s.tar.gz"
 echo "done, making directory $HOME/.shell-tanks..."
 mkdir "$HOME/.shell-tanks"
 cd "$HOME/.shell-tanks"
