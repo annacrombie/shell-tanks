@@ -58,8 +58,6 @@ function main_ {
 	display_
 	update-wheels_
 	ai_&
-	#experimental split-shot
-	#shottype=split
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
 			((aikilled++))
@@ -159,55 +157,26 @@ function title_screen_ {
 	else
 		logosize=small
 	fi
-	selection0=("humanvhuman" "humanvcomputer" "settings" "exit")
-	selection1=("local") #"network")
-	sel=(0 0 0)
+	selection=("humanvcomputer" "exit")
+	sel=0
 	mainlogo_
 	while true; do
-		if [[ ${sel[2]} = 0 ]]; then
-			logos_ ${selection0[${sel[${sel[2]}]}]}
-		elif [[ ${sel[2]} = 1 ]]; then
-			logos_ ${selection1[ ${sel[ ${sel[ 2 ]} ]} ]}
-		fi
+		logos_ ${selection[$sel]}
 		read -s -n 1 key
 		if [[ -n $key ]]; then
-			if [[ $key = a ]] || [[ $key = A ]]; then
-				sel[${sel[2]}]=$((${sel[${sel[2]}]}-1))
-			elif [[ $key = d ]] || [[ $key = D ]]; then
-				sel[${sel[2]}]=$((${sel[${sel[2]}]}+1))
-			elif [[ $key =  ]] || [[ $key = w ]] || [[ $key = W ]]; then
-				if [[ ${sel[2]} = 1 ]]; then
-					sel[2]=0
-				fi
+			if [[ $key = [${controls[0]}] ]]; then
+				sel=0
+			elif [[ $key = [${controls[1]}] ]]; then
+				sel=1
 			elif [[ $key = h ]] || [[ $key = H ]]; then
 				help_
 			fi
-			if [[ ${sel[2]} = 0 ]]; then
-				if [[ ${sel[${sel[2]}]} -gt $((${#selection0[@]}-1)) ]]; then
-					sel[${sel[2]}]=$((${#selection0[@]}-1))
-				elif [[ ${sel[${sel[2]}]} -lt 0 ]]; then
-					sel[${sel[2]}]=0
-				fi
-			elif [[ ${sel[2]} = 1 ]]; then
-				if [[ ${sel[${sel[2]}]} -gt $((${#selection1[@]}-1)) ]]; then
-					sel[${sel[2]}]=$((${#selection1[@]}-1))
-				elif [[ ${sel[${sel[2]}]} -lt 0 ]]; then
-					sel[${sel[2]}]=0
-				fi
-			fi
 		else
 			audio_ -t fx hit/$((RANDOM%2))
-			if [[ ${sel[2]} = 0 ]]; then
-				echo -en "\033[32m"
-				logos_ ${selection0[${sel[${sel[2]}]}]}
-				sleep 0.2
-				if [[ ${sel[0]} = 0 ]]; then
-					sel[2]=1
-				elif [[ $sel = 1 ]]; then
-					break
-				fi
-			elif [[ $slevel = 1 ]]; then
-				:
+			if [[ $sel = 0 ]]; then
+				break
+			elif [[ $sel = 1 ]]; then
+				cleanup_
 			fi
 		fi
 	done
@@ -301,7 +270,7 @@ function place-items_ {
 
 					if [[ $shottype = split ]] && [[ ${points[$i]} = $maxh ]]; then
 						log_ 0 "shot # $2 split"
-						rm data/shot/$2
+						rm -rf data/shot/$2
 						firesplit_ $shot_x ${points[$i]}&
 						breaknext=true
 					fi
@@ -312,7 +281,7 @@ function place-items_ {
 						log_ 0 "shot # $2 hit"
 						explosion_ $shot_x ${points[$i]}
 						if [[ $shottype != beensplit ]]; then
-							rm data/shot/$2
+							rm -rf data/shot/$2
 						fi
 						break
 					fi
@@ -323,19 +292,6 @@ function place-items_ {
 	else
 		tank_
 	fi
-}
-function firesplit_ {
-	pos=($1 $2)
-	for ((i=0;i<$((RANDOM%3+1));i++)); do
-		achoice=$((RANDOM%2))
-		if [[ $achoice = 0 ]]; then
-			rangle=$((angle-RANDOM%35))
-		elif [[ $achoice = 1 ]]; then
-			rangle=$((angle-RANDOM%35))
-		fi
-		shottype=beensplit
-		fire_ -a $rangle&
-	done
 }
 function tank_ {
 	if [[ $1 = surround ]]; then
@@ -435,7 +391,7 @@ function ai_ {
 	while [[ -f data/ailock ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
 			explosion_ ${pos[@]}
-			rm data/ailock
+			rm -rf data/ailock
 			break
 		fi
 		memory_ ml
@@ -514,12 +470,12 @@ function generate-map_ {
 			eval map$i[$j]="_"
 		done
 	done
-	height=$((RANDOM%$((${surface[0]}/4))+$((${surface[0]}/4))))
+	height=$((RANDOM%$((${surface[0]}/4))+$((${surface[0]}/5))))
 	lhc=0
 	if [[ $height -lt 5 ]]; then
 		height=5
-	elif [[ $height -ge $((${surface[0]}/3)) ]]; then
-		height=$((${surface[0]}/3))
+	elif [[ $height -ge $((${surface[0]}/4)) ]]; then
+		height=$((${surface[0]}/4))
 	fi
 	for ((i=0;i<${surface[1]};i++)); do
 		for ((j=0;j<$height;j++)); do
@@ -626,7 +582,7 @@ function input_ {
 			elif [[ $key = p ]]; then
 				lk="x"
 				if [[ -f ./data/ailock ]]; then
-					rm ./data/ailock
+					rm -rf ./data/ailock
 				else
 					ai_&
 				fi
@@ -677,14 +633,30 @@ function fire_ {
 	fi
 	if [[ $1 = "-a" ]]; then
 		angle=$2
+		shspeed=$3
+	else
+		shspeed=10
 	fi
 	if [[ $angle -gt 90 ]]; then
 		cangle=($((90-(angle-90))) 1)
 	elif [[ $angle -le 90 ]]; then
 		cangle=($angle 0)
 	fi
-	plot-points_ 10 ${cangle[0]} ${pos[1]}
+	plot-points_ $shspeed ${cangle[0]} ${pos[1]}
 	place-items_ projectile $shots_fired ${cangle[1]}
+}
+function firesplit_ {
+	pos=($1 $2)
+	for ((i=0;i<3;i++)); do
+		achoice=$((RANDOM%2))
+		if [[ $achoice = 0 ]]; then
+			rangle=$((angle-RANDOM%35))
+		elif [[ $achoice = 1 ]]; then
+			rangle=$((angle+RANDOM%35))
+		fi
+		shottype=beensplit
+		fire_ -a $rangle $((RANDOM%7+14))&
+	done
 }
 function animation_ {
 	if [[ $1 = fall ]]; then
@@ -772,7 +744,7 @@ function explosion_ {
 	done
 	memory_ ms
 	if [[ -f data/explosionlock ]]; then
-		rm data/explosionlock
+		rm -rf data/explosionlock
 	fi
 }
 function display_health_ {
@@ -800,6 +772,7 @@ function switch_weapon_ {
 		echo -e "\033[$((${ipos[1]}));$((${ipos[0]}))H$dicon"
 	fi
 	display_stats_
+	shottype=${weapon_type[$weapon]}
 }
 function display_stats_ {
 	if [[ $angle -gt 99 ]]; then
@@ -821,7 +794,7 @@ function display_stats_ {
 }
 function display_ {
 	if [[ -f ./data/tlock ]]; then
-		rm ./data/tlock
+		rm -rf ./data/tlock
 		wastlock=true
 	else
 		wastlock=false
@@ -919,14 +892,15 @@ function load_weaps_ {
 		weapon_icon_l[$i]="${wcon[2]}${wcon[1]}${wcon[0]}"
 	done
 	mweapon_ammo[0]=45
+	shottype=${weapon_type[0]}
 }
 function game_over_ {
-	rm ./data/tlock
+	rm -rf ./data/tlock
 	echo -e "\033[7;$((${surface[0]}-4))H+---------------+"
 	echo -e "\033[8;$((${surface[0]}-4))H|-- GAME OVER --| - press any key"
 	echo -e "\033[9;$((${surface[0]}-4))H+---------------+"
 	read -s -n 1
-	rm ./data/ailock
+	rm -rf ./data/ailock
 	sleep 2
 	cleanup_
 }

@@ -5,8 +5,13 @@ weapon_name=(
 )
 weapon_damage=(
 	"3"
-	"6"
-	"9"
+	"5"
+	"11"
+)
+weapon_type=(
+	"normal"
+	"split"
+	"normal"
 )
 weapon_ammo=(
 	"45"
