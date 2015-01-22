@@ -19,6 +19,11 @@ function launch_ {
 				do_ccheck=0
 				developer=1
 				shift
+			elif [[ "$1" = "-n" ]]; then
+				network=true
+				clientid=$2
+				ip=$3
+				shift 2
 			elif [[ "$1" = "-r" ]]; then
 				rm -rf ./data/*
 				shift
@@ -49,8 +54,8 @@ function launch_ {
 	log_ 0 "Initiated"
 	import_ audio.sh
 	import_ physics.sh
-	import_ shell-tanks.sh $(tput lines) $(tput cols)
 	import_ network.sh
+	import_ shell-tanks.sh $(tput lines) $(tput cols)
 	log_ 0 "Import Finished"
 	audio_ -t fx startup
 	if [[ $mode = 0 ]]; then

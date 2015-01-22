@@ -8,7 +8,24 @@ function shanks2ini_ {
 	shots_fired=0
 	last_shot=$SECONDS
 	mkdir -p data/shot
-	generate-map_
+	weapexplode=true
+
+	if [[ $network = true ]]; then
+		if [[ $clientid = 0 ]]; then
+			log_ 0 "generating map"
+			generate-map_
+			log_ 0 "sending map"
+			netmap_ send
+		elif [[ $clientid = 1 ]]; then
+			log_ 0 "generating map"
+			generate-map_ ds
+			log_ 0 "getting map"
+			netmap_ get
+			memory_ ml
+		fi
+	else
+		generate-map_
+	fi
 
 	player_color=2
 	enemy_color=1
@@ -57,7 +74,11 @@ function main_ {
 	memory_ sh 1 $health
 	display_
 	update-wheels_
-	ai_&
+	if [[ $network = true ]]; then
+		netclient_&
+	else
+		ai_&
+	fi
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
 			((aikilled++))
@@ -88,6 +109,9 @@ function main_ {
 		plit=true
 		sleep 0.$((speed-smod+momentum))
 		input_
+		if [[ $network = true ]]; then
+			netsend_ p ${pos[@]} d $direction
+		fi
 	done
 }
 function logos_ {
@@ -497,7 +521,10 @@ function generate-map_ {
 			((lhc++))
 		fi
 	done
-	memory_ ms
+	if [[ $1 != ds ]]; then
+		log_ 0 "saving map"
+		memory_ ms
+	fi
 }
 function input_ {
 	read discard
@@ -543,6 +570,9 @@ function input_ {
 				fire_&last_shot=$SECONDS
 				mweapon_ammo[$weapon]=$((${mweapon_ammo[$weapon]}-1))
 				display_stats_
+				if [[ $network = true ]]; then
+					netsend_ f "$angle" 10
+				fi
 			fi
 			poscorrect_
 		elif [[ $key = [${controls[3]}] ]]; then
@@ -681,26 +711,34 @@ function coord_ {
 function explosion_ {
 	e_m=${weapon_damage[$weapon]} # set magnitude
 	#make sure it is odd, it just looks better
-	local bsub=$(( (e_m) /2))
-	for ((a=0;a<$e_m;a++)); do
-		for ((b=0;b<$((e_m));b++)); do
-			#set possible destroyed blocks
-			pbux=$(( $1 + ( b - bsub ) )) pbuy=$(($2 + ( a - bsub ) ))
-			#get the distance from the origin in x and y
-			d1=$(($1 - pbux)) d2=$(($2 - pbuy))
-			#add the absolute values of those differences to get an average distance
-			d=$(( ${d1//-/} + ${d2//-/} ))
-			#the further away from the origin, the less likely a block is to explode
-			if [[ $d -le 0 ]] || [[ $((RANDOM%d)) = 0 ]]; then
-				bup+=($d"."$pbux"."$pbuy)
-			fi
+	if [[ $1 = "-b" ]]; then
+		shift
+		log_ 0 "[explosion_] using custom bup: $@"
+		bup=("$@")
+		weapexplode=true
+		cbup=true
+	else
+		local bsub=$(( (e_m) /2))
+		for ((a=0;a<$e_m;a++)); do
+			for ((b=0;b<$((e_m));b++)); do
+				#set possible destroyed blocks
+				pbux=$(( $1 + ( b - bsub ) )) pbuy=$(($2 + ( a - bsub ) ))
+				#get the distance from the origin in x and y
+				d1=$(($1 - pbux)) d2=$(($2 - pbuy))
+				#add the absolute values of those differences to get an average distance
+				d=$(( ${d1//-/} + ${d2//-/} ))
+				#the further away from the origin, the less likely a block is to explode
+				if [[ $d -le 0 ]] || [[ $((RANDOM%d)) = 0 ]]; then
+					bup+=($d"."$pbux"."$pbuy)
+				fi
+			done
 		done
-	done
-	#from so
-	oldifs=$IFS
-	IFS=$'\n' sbup=($(sort <<<"${bup[*]}"))
-	IFS=$oldifs
-	bup=(${sbup[@]})
+		#from so
+		oldifs=$IFS
+		IFS=$'\n' sbup=($(sort <<<"${bup[*]}"))
+		IFS=$oldifs
+		bup=(${sbup[@]})
+	fi
 	if [[ $weapon != 2 ]]; then
 		audio_ -t fx hit/$((RANDOM%2))
 	else
@@ -708,6 +746,13 @@ function explosion_ {
 	fi
 	memory_ ml
 	showedexp=0
+	if [[ $network = true ]] && [[ $weapexplode = false ]]; then
+		log_ 0 "[explosion_] not exploding weapexplode->false"
+		return
+	elif [[ $network = true ]] && [[ $weapexplode = true ]] && [[ $cbup != true ]]; then
+		log_ 0 "[explosion_] sending explosion data"
+		netsend_ x ${bup[@]}
+	fi
 	for ((i=0;i<${#bup[@]};i++)); do
 		posspos_0=($(memory_ pl 0))
 		posspos_1=($(memory_ pl 1))
@@ -905,7 +950,7 @@ function game_over_ {
 	cleanup_
 }
 function shanks2cleanup_ {
-	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot
+	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock
 	tput cnorm
 }
 shanks2ini_ "$@"
