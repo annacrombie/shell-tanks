@@ -1,5 +1,5 @@
 function netini_ {
-	ip="127.0.0.1"
+	ip="192.168.1.136"
 	port=("12345" "22345")
 	if [[ $clientid = 0 ]]; then
 		oclientid=1

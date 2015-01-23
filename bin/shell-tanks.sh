@@ -299,7 +299,6 @@ function place-items_ {
 						breaknext=true
 					fi
 
-
 					#if [[ ${sb[0]} = "#" ]] || [[ ${sb[1]} = "#" ]] || [[ ${sb[2]} = "#" ]]; then
 					if [[ ${sb[4]} = "#" ]] || [[ $((${#points[@]}-1)) = $i ]]; then
 						log_ 0 "shot # $2 hit"
