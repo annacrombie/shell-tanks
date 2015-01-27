@@ -23,7 +23,7 @@ function launch_ {
 				network=true
 				clientid=$2
 				ip=$3
-				shift 2
+				shift 3
 			elif [[ "$1" = "-r" ]]; then
 				rm -rf ./data/*
 				shift

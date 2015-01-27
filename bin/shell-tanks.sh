@@ -64,7 +64,7 @@ function shanks2ini_ {
 	tput civis
 	echo -n -e "\033]0;shell-tanks build $(cat ../ver.txt)\007"
 
-	audio_ -t theme -l tanktanktank_mayhem
+	audio_ -t theme -l tanktanktank0 tanktanktank1
 }
 function main_ {
 	draw_
@@ -134,6 +134,8 @@ function logos_ {
 			echo -e "\033[${hy[0]};${hcenter}H       LOCAL      "
 		elif [[ $1 = "network" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H      NETWORK     "
+		elif [[ $1 = "exit" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H       EXIT       "
 		fi
 	elif [[ $logosize = big ]]; then
 		hcenter=$(( ( ${surface[1]} - 130 ) / 2 ))

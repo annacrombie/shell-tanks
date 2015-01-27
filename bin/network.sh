@@ -1,5 +1,7 @@
 function netini_ {
-	ip="192.168.1.136"
+	if [[ -z $ip ]]; then
+		ip="127.0.0.1"
+	fi
 	port=("12345" "22345")
 	if [[ $clientid = 0 ]]; then
 		oclientid=1
@@ -16,6 +18,7 @@ function netmain_ {
 function netmap_ {
 	if [[ $1 = get ]]; then
 		log_ 0 "[server] getting map from ${port[$clientid]}"
+		echo "waiting for map on port ${port[$clientid]}"
 		if [[ $(uname) = "Darwin" ]]; then
 			echo "r" | nc -l ${port[$clientid]} > data/ms
 		elif [[ $(uname) = "Linux" ]]; then
