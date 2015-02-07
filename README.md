@@ -1,16 +1,20 @@
-shell-tanks
+#shell-tanks
 ===========
 
-tanks game in bourne again shell
+##Descrpition:
+Shell Tanks is a 2d game with randomly generated terrain in which the object is to destroy your opponent by adjusting  the angle of your cannon and firing projectiles that explode on impact with varying sizes depending on which weapon you use.
 
-uses bc to calculate basic physics using kinematics, make sure it is installed.
-minimal use of sed and awk killall and grep
-everything else is pure bash
+##Features:
+* Rudimentary physics engine used to calculate projectile path and tank falling speed
+* Customizable weapons by editing weap.dat
+* Slightly intelligent AI
+* Randomly generated terrain with trees and water
+* Easily customizable textures by editing the files in graphics and the variables at the top of shell-tanks.sh
+* Random explosions based on the weapon you are using
 
-the shell tanks isometric text is from http://www.network-science.de/ascii/
+![Random Terrain Example](/img/terrain.png?raw=true "Random Terrain Example")
 
-all of the sound effects were made by me using ableton live 8 and massive
-
-the title theme (temporary) is the song TANK! TANK! TANK! by Mayhem http://lapfoxtrax.com/track/tank-tank-tank
-
-all shell code written by me
+===========
+##Credits:
+* the shell tanks isometric text is from http://www.network-science.de/ascii/
+* the title theme is the song TANK! TANK! TANK! by Mayhem http://lapfoxtrax.com/track/tank-tank-tank
