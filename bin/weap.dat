@@ -2,29 +2,35 @@ weapon_name=(
 	"cannon"
 	"mortar"
 	"nuke"
+	"sNuke"
 )
 weapon_damage=(
 	"3"
 	"5"
+	"11"
 	"11"
 )
 weapon_type=(
 	"normal"
 	"split"
 	"normal"
+	"split"
 )
 weapon_ammo=(
 	"45"
 	"6"
+	"3"
 	"3"
 )
 weapon_icon_r=(
 	"+--"
 	"X=="
 	"=>>"
+	"//>"
 )
 weapon_cost=(
 	"1000"
 	"1500"
 	"2000"
+	"3000"
 )

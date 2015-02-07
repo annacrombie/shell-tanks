@@ -10,6 +10,13 @@ function shanks2ini_ {
 	mkdir -p data/shot
 	weapexplode=true
 
+	#blocks used for terrain
+	blocks=(█ "#" ∂)
+	#sets the color of each block
+	cblock=("\033[33m${blocks[0]}" "\033[32m${blocks[1]}" "\033[34m${blocks[2]}")
+	#list of blocks that can be impacted
+	iblock=[${blocks[0]}${blocks[1]}]
+
 	if [[ $network = true ]]; then
 		if [[ $clientid = 0 ]]; then
 			log_ 0 "generating map"
@@ -17,8 +24,6 @@ function shanks2ini_ {
 			log_ 0 "sending map"
 			netmap_ send
 		elif [[ $clientid = 1 ]]; then
-			log_ 0 "generating map"
-			generate-map_ ds
 			log_ 0 "getting map"
 			netmap_ get
 			memory_ ml
@@ -34,10 +39,10 @@ function shanks2ini_ {
 	health=20
 	smod=0
 	angle=45
-	speed=25
+	speed=10
 	points=0
-	wheels_tr=("-" '\' "|" "/")
-	wheels_tl=("-" "/" "|" '\')
+	#load the tank graphics
+	. ./graphic/tank/lines.txt
 	wheels=0
 	momentum=0
 	plit=true
@@ -77,7 +82,8 @@ function main_ {
 	if [[ $network = true ]]; then
 		netclient_&
 	else
-		ai_&
+		:
+		#ai_&
 	fi
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
@@ -85,11 +91,6 @@ function main_ {
 			points=$(( points + ( 1000 + ( 100 * aikilled ) ) ))
 			rm -rf ./data/shot ./data/tlock
 			mkdir data/shot
-			#for ((i=0;i<2;i++)); do
-			#	while [[ -f data/ailock ]] || [[ -f data/shot/* ]]; do
-			#		sleep 0.09
-			#	done
-			#done
 			shop_
 			mainlogo_
 			memory_ sh 0 $health
@@ -107,7 +108,7 @@ function main_ {
 			place-items_
 		fi
 		plit=true
-		sleep 0.$((speed-smod+momentum))
+		sleep 0.$((speed-smod))
 		input_
 		if [[ $network = true ]]; then
 			netsend_ p ${pos[@]} d $direction
@@ -165,18 +166,53 @@ function logos_ {
 			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                   ###### ##  ## ###### ######                                                    \033[${hy[1]};${hcenter}H                                              ---+ ##      ####    ##     ##   +---                                               \033[${hy[2]};${hcenter}H                                            << A | ######   ##     ##     ##   | D >>                                             \033[${hy[3]};${hcenter}H                                              ---+ ##      ####    ##     ##   +---                                               \033[${hy[4]};${hcenter}H                                                   ###### ##  ## ######   ##                                                      "
 		elif [[ $1 = "settings" ]]; then
 			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                      ####  ###### ###### ###### ###### ##  ##  #####   ####                                      \033[${hy[1]};${hcenter}H                                ---+ ##     ##       ##     ##     ##   ### ## ##      ##     +---                                \033[${hy[2]};${hcenter}H                              << A |  ####  ######   ##     ##     ##   ###### ##  ###  ####  | D >>                              \033[${hy[3]};${hcenter}H                                ---+     ## ##       ##     ##     ##   ## ### ##   ##     ## +---                                \033[${hy[4]};${hcenter}H                                      ####  ######   ##     ##   ###### ##  ##  #####   ####                                      "
+		elif [[ $1 = "sun" ]]; then
+			center=$(( ( ${surface[1]} - 27 ) / 2 ))
+			sun_height=(0 0 3 4 5 6 7 8 9 10 11 12 13 14 15)
+			sun_height=(0 0)
+			sun_margin=5
+			tcolor=(3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1)
+			((tcycle++))
+			if [[ $tcycle = 16 ]]; then
+				tcycle=0
+			fi
+			for ((i=0;i<13;i++)); do
+				sun_height+=($((sun_margin+i)))
+				scolor[$i]=${tcolor[$((tcycle+i))]}
+			done
+			echo -e "\033[3${scolor[0]}m\033[${sun_height[2]};${center}H"'      _,,ddP"""Ybb,,_      '"\n\033[3${scolor[1]}m\033[${sun_height[3]};${center}H"'    ,d888888888888888b,    '"\n\033[3${scolor[2]}m\033[${sun_height[4]};${center}H"'  ,d8888888888888888888b,  '"\n\033[3${scolor[3]}m\033[${sun_height[5]};${center}H"' d88888888888888888888888b '"\n\033[3${scolor[4]}m\033[${sun_height[6]};${center}H"'d8888888888888888888888888b'"\n\033[3${scolor[5]}m\033[${sun_height[7]};${center}H"'888888888888888888888888888'"\n\033[3${scolor[6]}m\033[${sun_height[8]};${center}H"'888888888888888888888888888'"\n\033[3${scolor[7]}m\033[${sun_height[9]};${center}H"'888888888888888888888888888'"\n\033[3${scolor[8]}m\033[${sun_height[10]};${center}H"'Y8888888888888888888888888P'"\n\033[3${scolor[9]}m\033[${sun_height[11]};${center}H"' Y88888888888888888888888P '"\n\033[3${scolor[10]}m\033[${sun_height[12]};${center}H"'  "Y8888888888888888888P"  '"\n\033[3${scolor[11]}m\033[${sun_height[13]};${center}H"'    "Y888888888888888P"    '"\n\033[3${scolor[12]}m\033[${sun_height[14]};${center}H"'      `""YbbgggddP""`      '
+		elif [[ $1 = "moon" ]]; then
+			center=$(( ( ${surface[1]} - 27 ) / 2 ))
+			mun_height=(0 0 3 4 5 6 7 8 9 10 11 12 13 14 15)
+			mun_height=(0 0)
+			mun_margin=5
+			tcolor=(5 4 5 4 5 4 5 4 5 4 5 4 5 4 5 4 5 4 5 4 5 4 5 4 5 4 5 4)
+			((tcycle++))
+			if [[ $tcycle = 16 ]]; then
+				tcycle=0
+			fi
+			for ((i=0;i<13;i++)); do
+				mun_height+=($((mun_margin+i)))
+				mcolor[$i]=${tcolor[$((tcycle+i))]}
+			done
+			echo -e "\033[3${mcolor[0]}m\033[${mun_height[2]};${center}H"'      _,,ddP"""Ybb,,_      '"\n\033[3${mcolor[1]}m\033[${mun_height[3]};${center}H"'    ,d888888888888888b,    '"\n\033[3${mcolor[2]}m\033[${mun_height[4]};${center}H"'  ,d8/        \88888888b,  '"\n\033[3${mcolor[3]}m\033[${mun_height[5]};${center}H"' d/              \8888888b '"\n\033[3${mcolor[4]}m\033[${mun_height[6]};${center}H"'                  \8888888b'"\n\033[3${mcolor[5]}m\033[${mun_height[7]};${center}H"'                   |8888888'"\n\033[3${mcolor[6]}m\033[${mun_height[8]};${center}H"'                    |888888'"\n\033[3${mcolor[7]}m\033[${mun_height[9]};${center}H"'                   |8888888'"\n\033[3${mcolor[8]}m\033[${mun_height[10]};${center}H"'                  /8888888P'"\n\033[3${mcolor[9]}m\033[${mun_height[11]};${center}H"' Y\              /8888888P '"\n\033[3${mcolor[10]}m\033[${mun_height[12]};${center}H"'  "Y8\        /88888888P"  '"\n\033[3${mcolor[11]}m\033[${mun_height[13]};${center}H"'    "Y888888888888888P"    '"\n\033[3${mcolor[12]}m\033[${mun_height[14]};${center}H"'      `""YbbgggddP""`      '
 		fi
 	fi
 }
 function mainlogo_ {
 	touch ./data/tlock
-	log_ 0 "made tlocks"
 	while [[ -f ./data/tlock ]]; do
-		logos_ title
-		sleep 0.2
+		if [[ $intitlescreen = true ]]; then
+			logos_ title
+			sleep 0.2
+		elif [[ $intitlescreen = false ]]; then
+			logos_ moon
+			sleep 0.7
+		fi
 	done&
 }
 function title_screen_ {
+	intitlescreen=true
 	tcycle=0
 	if [[ ${surface[0]} -ge 30 ]] && [[ ${surface[1]} -ge 130 ]]; then
 		logosize=big
@@ -200,6 +236,7 @@ function title_screen_ {
 		else
 			audio_ -t fx hit/$((RANDOM%2))
 			if [[ $sel = 0 ]]; then
+				intitlescreen=false
 				break
 			elif [[ $sel = 1 ]]; then
 				cleanup_
@@ -214,7 +251,7 @@ function update-wheels_ {
 	elif [[ $direction = "l" ]]; then
 		wc=${wheels_tl[$wheels]}
 	fi
-	if [[ $wheels = 3 ]]; then
+	if [[ ${#wheels_tr[@]} = $((wheels+1)) ]]; then
 		wheels=0
 	else
 		((wheels++))
@@ -227,23 +264,32 @@ function place-items_ {
 			oipos=($((${oldpos[0]}+1)) $(echo $((${oldpos[1]}-${surface[0]}-1)) | sed 's/-//g'))
 			place-items_ clear-tank
 			if [[ $orientation = 1 ]]; then 
-				echo -e "\033[$((30+player_color))m\033[${ipos[1]};${ipos[0]}H$wc""-""$wc"
+				echo -e "\033[$((30+player_color))m\033[${ipos[1]};${ipos[0]}H$wc""${cockpit[0]}""$wc"
 			elif [[ $orientation = 2 ]]; then
-				echo -e "\033[$((30+player_color))m\033[$((${ipos[1]}-1));$((${ipos[0]}+1))H_$wc"
+				echo -e "\033[$((30+player_color))m\033[$((${ipos[1]}-1));$((${ipos[0]}+1))H${cockpit[1]}$wc"
 				echo -e "\033[${ipos[1]};${ipos[0]}H$wc"
 			elif [[ $orientation = 0 ]]; then
-				echo -e "\033[$((30+player_color))m\033[$((${ipos[1]}-1));${ipos[0]}H$wc""_\033[${ipos[1]};$((${ipos[0]}+2))H$wc"
+				echo -e "\033[$((30+player_color))m\033[$((${ipos[1]}-1));${ipos[0]}H$wc""${cockpit[1]}\033[${ipos[1]};$((${ipos[0]}+2))H$wc"
 			fi
 			echo -en "\033[0m"
 			oldpos=(${pos[@]})
 			oldorientation=$orientation
 		elif [[ $1 = clear-tank ]]; then
-			if [[ $oldorientation = 1 ]]; then
-				echo -e "\033[${oipos[1]};${oipos[0]}H   "
-			elif [[ $oldorientation = 2 ]]; then
-				echo -e "\033[${oipos[1]};${oipos[0]}H \033[$((${oipos[1]}-1));$((${oipos[0]}+1))H  "
-			elif [[ $oldorientation = 0 ]]; then
-				echo -e "\033[$((${oipos[1]}-1));$((${oipos[0]}))H  \033[${oipos[1]};$((${oipos[0]}+2))H "
+			if [[ $oldorientation = 1 ]]; then # /-/
+				w_pos=($((${oldpos[0]}-1)) $((${oldpos[0]}+1)))
+				ofs=(0 0 0)
+				eval "ot=(\${map$((${oldpos[1]}+${ofs[0]}))[${w_pos[0]}]} \${map$((${oldpos[1]}+${ofs[1]}))[${pos[0]}]} \${map$((${oldpos[1]}+${ofs[2]}))[${w_pos[1]}]})"
+				echo -e "\033[${oipos[1]};${oipos[0]}H${ot[0]//_/ }${ot[1]//_/ }${ot[2]//_/ }"
+			elif [[ $oldorientation = 2 ]]; then # _-
+				w_pos=($((${oldpos[0]}-1)) $((${oldpos[0]}+1)))
+				ofs=(0 1 1)
+				eval "ot=(\${map$((${oldpos[1]}+${ofs[0]}))[${w_pos[0]}]} \${map$((${oldpos[1]}+${ofs[1]}))[${pos[0]}]} \${map$((${oldpos[1]}+${ofs[2]}))[${w_pos[1]}]})"
+				echo -e "\033[${oipos[1]};${oipos[0]}H${ot[0]//_/ }\033[$((${oipos[1]}-1));$((${oipos[0]}+1))H${ot[1]//_/ }${ot[2]//_/ }"
+			elif [[ $oldorientation = 0 ]]; then # -_
+				w_pos=($((${oldpos[0]}-1)) $((${oldpos[0]}+1)))
+				ofs=(1 1 0)
+				eval "ot=(\${map$((${oldpos[1]}+${ofs[0]}))[${w_pos[0]}]} \${map$((${oldpos[1]}+${ofs[1]}))[${pos[0]}]} \${map$((${oldpos[1]}+${ofs[2]}))[${w_pos[1]}]})"
+				echo -e "\033[$((${oipos[1]}-1));$((${oipos[0]}))H${ot[0]//_/ }${ot[1]//_/ }\033[${oipos[1]};$((${oipos[0]}+2))H${ot[2]//_/ }"
 			fi
 		elif [[ $1 = projectile ]]; then
 			rchar="_" maxh=0 breaknext=false
@@ -277,15 +323,21 @@ function place-items_ {
 					pointsInverted=$(echo $((${points[$i]}-${surface[0]}-1)) | sed 's/-//g')
 
 					#impact logic
-					scx=($((shot_x-1)) $shot_x $((shot_x+1)))
-					scy=($((${points[$i]}+1)) ${points[$i]} $((${points[$i]}-1)))
-					eval "sb=(\${map${scy[0]}[${scx[0]}]} \${map${scy[0]}[${scx[1]}]} \${map${scy[0]}[${scx[2]}]}
-							  \${map${scy[1]}[${scx[0]}]} \${map${scy[1]}[${scx[1]}]} \${map${scy[1]}[${scx[1]}]}
-							  \${map${scy[2]}[${scx[0]}]} \${map${scy[2]}[${scx[2]}]} \${map${scy[2]}[${scx[2]}]})"
-
+					if [[ $shot_x -gt 0 ]]; then
+						scx=($((shot_x-1)) $shot_x $((shot_x+1)))
+						scy=($((${points[$i]}+1)) ${points[$i]} $((${points[$i]}-1)))
+						eval "sb=(\${map${scy[0]}[${scx[0]}]} \${map${scy[0]}[${scx[1]}]} \${map${scy[0]}[${scx[2]}]}
+								  \${map${scy[1]}[${scx[0]}]} \${map${scy[1]}[${scx[1]}]} \${map${scy[1]}[${scx[1]}]}
+								  \${map${scy[2]}[${scx[0]}]} \${map${scy[2]}[${scx[2]}]} \${map${scy[2]}[${scx[2]}]})"
+					else
+						if [[ $shottype != beensplit ]]; then
+							rm -rf data/shot/$2
+						fi
+						break
+					fi
 					#if the shot goes through walls, replace the walls
-					if [[ ${sb[4]} = "#" ]]; then
-						rchar="#"
+					if [[ ${sb[4]} != "_" ]]; then
+						rchar="${sb[4]}"
 					else
 						rchar=" "
 					fi
@@ -302,7 +354,7 @@ function place-items_ {
 					fi
 
 					#if [[ ${sb[0]} = "#" ]] || [[ ${sb[1]} = "#" ]] || [[ ${sb[2]} = "#" ]]; then
-					if [[ ${sb[4]} = "#" ]] || [[ $((${#points[@]}-1)) = $i ]]; then
+					if [[ ${sb[4]//\\033\[3[0-9]m/} = $iblock ]] || [[ $((${#points[@]}-1)) = $i ]]; then
 						log_ 0 "shot # $2 hit"
 						explosion_ $shot_x ${points[$i]}
 						if [[ $shottype != beensplit ]]; then
@@ -332,7 +384,7 @@ function tank_ {
 		tank_ surround
 		fell=0
 		lastsleep=0
-		while [[ ${grnd[@]} = "_ _ _" ]]; do
+		while [[ ${grnd[0]//\\033\[3[0-9]m/} != $iblock ]] && [[ ${grnd[1]//\\033\[3[0-9]m/} != $iblock ]] && [[ ${grnd[2]//\\033\[3[0-9]m/} != $iblock ]]; do
 			if [[ $isai = true ]] && [[ ! -f data/ailock ]]; then
 				break
 			fi
@@ -347,20 +399,20 @@ function tank_ {
 				sleep $stime
 				lastsleep=$ttime
 			fi
-		done
-		if [[ ${wwb[0]} = "#" ]] && [[ ${wwb[3]} = "#" ]]; then
+		done		
+		if [[ ${wwb[0]//\\033\[3[0-9]m/} = $iblock ]] && [[ ${wwb[3]//\\033\[3[0-9]m/} = $iblock ]]; then
 			pos=(${moldpos[@]})
-		elif [[ ${wwb[2]} = "#" ]] && [[ ${wwb[4]} = "#" ]]; then
+		elif [[ ${wwb[2]//\\033\[3[0-9]m/} = $iblock ]] && [[ ${wwb[4]//\\033\[3[0-9]m/} = $iblock ]]; then
 			pos=(${moldpos[@]})
 		fi
-		if [[ ${wwb[0]} = "#" ]]; then
+		if [[ ${wwb[0]//\\033\[3[0-9]m/} = $iblock ]]; then
 			orientation=0
-		elif [[ ${wwb[2]} = "#" ]]; then
+		elif [[ ${wwb[2]//\\033\[3[0-9]m/} = $iblock ]]; then
 			orientation=2
 		else
 			orientation=1
 		fi
-		if [[ ${wwb[1]} = "#" ]]; then
+		if [[ ${wwb[1]//\\033\[3[0-9]m/} = $iblock ]]; then
 			orientation=1
 			pos[1]=$((${pos[1]}+1))
 		fi
@@ -375,7 +427,7 @@ function shop_ {
 	stty $oldstty
 	bLg=2
 	while true; do
-		echo -e "\033[5;6H+-=SHOP=--------------------+"
+		echo -e "\033[5;6H+-=SHOP=-x to exit----------+"
 		for ((i=0;i<${#weapon_name[@]};i++)); do
 			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts      |"
 		done
@@ -386,6 +438,7 @@ function shop_ {
 		elif [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
 			if [[ $points -ge ${weapon_cost[$item]} ]]; then
 				points=$((points-${weapon_cost[$item]}))
+				mweapon_ammo[$item]=${weapon_ammo[$item]}
 				echo -e "\033[$((6+i+bLg));6Hbought ${weapon_name[$item]} ammo"
 			else
 				echo -e "\033[$((6+i+bLg));6Hyou don't have enough points for ${weapon_name[$item]}"
@@ -480,11 +533,13 @@ function draw_ {
 	echo "$border"
 	for ((i=$((${surface[0]}-1));i>-1;i--)); do
 		eval "print=\${map$i[@]}"
-		echo "|"$print"|" | sed 's/ //g;s/_/ /g'
+		echo -e "|"$print"|" | sed 's/ //g;s/_/ /g'
 	done
 	echo -e "\033[1;1H-=Press H for Help=-"
 }
 function generate-map_ {
+	hdir=1
+	waterlvl=10
 	border="+-"
 	for ((i=1;i<$((${surface[1]}));i++)); do
 		border="$border""-"
@@ -503,13 +558,30 @@ function generate-map_ {
 		height=$((${surface[0]}/4))
 	fi
 	for ((i=0;i<${surface[1]};i++)); do
-		for ((j=0;j<$height;j++)); do
-			eval map$j[\$i]=\"#\"
-		done
-		if [[ $lhc = 6 ]]; then
-			if [[ $((RANDOM%2)) = 0 ]]; then
+		if [[ $height -ge $waterlvl ]]; then
+			for ((j=0;j<$height;j++)); do
+				if [[ $j = $((height-1)) ]]; then
+					eval map$j[\$i]=\"${cblock[1]}\"
+				else
+					eval map$j[\$i]=\"${cblock[0]}\"
+				fi
+			done
+		elif [[ $waterlvl -gt $height ]]; then
+			for ((j=0;j<$waterlvl;j++)); do
+				if [[ $j -ge $height ]]; then
+					eval map$j[\$i]=\"${cblock[2]}\"
+				else
+					eval map$j[\$i]=\"${cblock[0]}\"
+				fi
+			done
+		fi
+		if [[ $((RANDOM%4+lhc)) -ge 5 ]]; then
+			if [[ $((RANDOM%3)) = 0 ]]; then
+				hdir=$((RANDOM%2))
+			fi
+			if [[ $hdir = 0 ]]; then
 				height=$((height-1))
-			else
+			elif [[ $hdir = 1 ]]; then
 				height=$((height+1))
 			fi
 			if [[ $height -lt 5 ]]; then
@@ -536,29 +608,11 @@ function input_ {
 	if [[ -n $key ]]; then
 		if [[ $key = [${controls[0]}] ]]; then
 			pos[0]=$((${pos[0]}-1))
-			#if [[ $lk = l ]]; then
-			#	((momentum--))
-			#	if [[ $momentum -lt -15 ]]; then
-			#		momentum=-15
-			#	fi
-			#else
-			#	momentum=0
-			#fi
-			#lk="l"
 			direction="l"
 			update-wheels_
 			poscorrect_
 		elif [[ $key = [${controls[1]}] ]]; then
 			pos[0]=$((${pos[0]}+1))
-			#if [[ $lk = r ]]; then
-			#	((momentum--))
-			#	if [[ $momentum -lt -15 ]]; then
-			#		momentum=-15
-			#	fi
-			#else
-			#	momentum=0
-			#fi
-			#lk="r"
 			direction="r"
 			update-wheels_
 			poscorrect_
@@ -603,6 +657,9 @@ function input_ {
 				lk="x"
 				display_
 			elif [[ $key = c ]]; then
+				if [[ -f data/tlock ]]; then
+					rm data/tlock
+				fi
 				lk="x"
 				tput cnorm
 				echo -en "\033[2;2H"
@@ -684,6 +741,11 @@ function firesplit_ {
 			rangle=$((angle-RANDOM%35))
 		elif [[ $achoice = 1 ]]; then
 			rangle=$((angle+RANDOM%35))
+		fi
+		if [[ $rangle -lt 10 ]]; then
+			rangle=10
+		elif [[ $rangle -gt 170 ]]; then
+			rangle=170
 		fi
 		shottype=beensplit
 		fire_ -a $rangle $((RANDOM%7+14))&
@@ -862,7 +924,6 @@ function help_ {
 		hd="$(echo -e "$hd\n""| ${controls[$i]:1} ${control_desc[$i]} |")"
 	done
 	hb="+"
-	log_ 0 $(echo "$hd" | sed -n '2p')
 	for ((i=0;i<$(($(echo "$hd" | sed -n '2p' | wc -c)+9));i++)); do
 		hb="$hb""-"
 	done
@@ -934,7 +995,7 @@ function load_weaps_ {
 			break
 		fi
 		mweapon_ammo[$i]=0
-		wcon=($(echo ${weapon_icon_r[$i]} | sed 's/./& /g;s/>/</g'))
+		wcon=($(echo ${weapon_icon_r[$i]} | sed 's/./& /g;s/</>/g;s/>/</g;s/[{]/\}/g;s/[}]/\{/g;s/[]]/\[/g;s/[[]/\]/g;s/[)]/\(/g;s/[(]/\)/g;s/\//\\/g;s/[\]/\//g'))
 		weapon_icon_l[$i]="${wcon[2]}${wcon[1]}${wcon[0]}"
 	done
 	mweapon_ammo[0]=45

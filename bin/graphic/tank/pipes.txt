@@ -1,0 +1,3 @@
+cockpit=("Ö" "Ö")
+wheels_tr=("╗" "╚")
+wheels_tl=("╔" "╝")

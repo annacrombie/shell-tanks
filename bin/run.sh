@@ -2,6 +2,7 @@
 function launch_ {
 	trap "cleanup_" int
 	ini_
+	exec 2>>$lf
 	if [[ -n "$@" ]]; then
 		while [[ -n "$@" ]]; do
 			if [[ "$1" = "-i" ]]; then
@@ -14,6 +15,13 @@ function launch_ {
 			elif [[ "$1" = "-l" ]]; then
 				logging=2
 				shift
+			elif [[ "$1" = "-lf" ]]; then
+				if [[ -d $(dirname $2) ]]; then
+					lf=$2
+				else
+					lf=bad
+				fi
+				shift 2
 			elif [[ "$1" = "-d" ]]; then
 				do_update=0
 				do_ccheck=0
@@ -56,6 +64,10 @@ function launch_ {
 	import_ physics.sh
 	import_ network.sh
 	import_ shell-tanks.sh $(tput lines) $(tput cols)
+	if [[ $logging = 1 ]]; then
+		echo "->loaded functions: "
+		declare -F | sed 's/declare -f /-->/g'
+	fi
 	log_ 0 "Import Finished"
 	audio_ -t fx startup
 	if [[ $mode = 0 ]]; then
@@ -68,16 +80,22 @@ function help_ {
 	echo "usage: run.sh"
 	echo " -h: help"
 	echo " -l: log to file"
-	echo " -v: log to stty"
-	echo " -r: remove data folder"
+	echo " -v: log to stty, turned on by -i"
+	echo " -r: remove data folder on launch (if shell-tanks did not cleanup)"
 	echo " -d: developer mode, equivalent to next two flags"
 	echo "     --no-update: dont check for update"
 	echo "     --force-compatibility: dont check for compatibility"
 	echo " -i: interactive mode, turns on logging to stty by default"
 	echo " -m: mute all audio"
+	echo " -n <client id> <peer ip>: turns on network mode, client id"
+	echo "     must be a 1 or 0.  Client 0 will generate the map, and"
+	echo "     client 1 will listen for a finished map, so client 1  "
+	echo "     needs to be started before client 0.  If no ip is supplied,"
+	echo "     it reverts to 127.0.0.1.  This feature is very buggy!"
 	exit
 }
 function ini_ {
+	dlf="./shell-tanks.log"
 	oldstty=$(stty -g)
 	do_update=1
 	do_ccheck=1
@@ -87,6 +105,7 @@ function ini_ {
 	mkdir -p data
 	sound=1
 	logging=2
+	network=false
 	err_ -i
 }
 function import_ {
@@ -114,9 +133,14 @@ function err_ {
 	fi
 }
 function log_ {
-	lf="./shell-tanks.log"
+	if [[ -z $lf ]]; then
+		lf=$dlf
+	elif [[ $lf = bad ]]; then
+		lf=$dlf
+		log_ 1 "bad logfile specified, reverting to default"
+	fi
 	if [[ $1 = i ]]; then
-		echo -n "" > $lf
+		echo -n "[$(date)] logging to file" > $lf
 		return
 	fi
 	if [[ $logging = 0 ]]; then
@@ -124,25 +148,34 @@ function log_ {
 	elif [[ $logging = 1 ]]; then
 		if [[ $1 = 0 ]]; then
 			shift
-			echo "[$(date)][normal] $@"
+			echo "[$SECONDS][normal] $@"
 		elif [[ $1 = 1 ]]; then
 			shift
-			echo "[$(date)][warn] $@"
+			echo "[$SECONDS][warn] $@"
 		elif [[ $1 = 2 ]]; then
 			shift
-			echo "[$(date)][severe] $@"
+			echo "[$SECONDS][severe] $@"
 		fi
 	elif [[ $logging = 2 ]]; then
 		if [[ $1 = 0 ]]; then
 			shift
-			echo "[$(date)][normal] $@" >> $lf
+			echo "[$SECONDS][normal] $@" >> $lf
 		elif [[ $1 = 1 ]]; then
 			shift
-			echo "[$(date)][warn] $@" >> $lf
+			echo "[$SECONDS][warn] $@" >> $lf
 		elif [[ $1 = 2 ]]; then
 			shift
-			echo "[$(date)][severe] $@" >> $lf
+			echo "[$SECONDS][severe] $@" >> $lf
 		fi
+	fi
+}
+function debug_ {
+	if [[ messy_debug = 1 ]]; then
+		set +x
+		messy_debug=0
+	elif [[ $messy_debug = 0 ]]; then
+		set -x
+		messy_debug=1
 	fi
 }
 function cleanup_ {
@@ -158,6 +191,7 @@ function cleanup_ {
 }
 function interactive_ {
 	stty $oldstty
+	tput cnorm
 	i_history=(" ")
 	hnum=0
 	echo "press escape and enter to enter history mode"
@@ -188,7 +222,29 @@ function interactive_ {
 		if [[ $key = exit ]] || [[ $key = x ]]; then
 			break
 		fi
-		$key
+		if [[ $key = "echo"* ]]; then
+			key=(${key[@]})
+			unset key[0]
+			key=(${key[@]})
+			for ((i=0;i<${#key[@]};i++)); do
+				dvar=${key[$i]}
+				if [[ $dvar = '${'*'['*']}' ]]; then
+					am=${dvar//[\{,\},\$]/}
+					echo -n "${!am} "
+				elif [[ $dvar = '$'* ]]; then
+					am=${dvar//\$/}
+					echo -n "${!am} "
+				else
+					echo -n "$dvar "
+				fi
+			done
+			unset key
+			echo ""
+		elif [[ $key = exit ]]; then
+			cleanup_
+		else
+			$key
+		fi
 		if [[ -n "$key" ]]; then
 			i_history[$hnum]="$key"
 			((hnum++))
