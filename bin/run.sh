@@ -2,7 +2,6 @@
 function launch_ {
 	trap "cleanup_" int
 	ini_
-	exec 2>>$lf
 	if [[ -n "$@" ]]; then
 		while [[ -n "$@" ]]; do
 			if [[ "$1" = "-i" ]]; then
@@ -75,6 +74,7 @@ function launch_ {
 	elif [[ $mode = 1 ]]; then
 		interactive_
 	fi
+	exec 2>>$lf
 }
 function help_ {
 	echo "usage: run.sh"

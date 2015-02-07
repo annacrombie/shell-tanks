@@ -10,10 +10,45 @@ function shanks2ini_ {
 	mkdir -p data/shot
 	weapexplode=true
 
-	#blocks used for terrain
-	blocks=(█ "#" ∂)
+	#colors
+	c_no="\033[0m"
+	c_black="\033[30m"
+	c_red="\033[31m"
+	c_green="\033[32m"
+	c_yellow="\033[33m"
+	c_blue="\033[34m"
+	c_purple="\033[35m"
+	c_cyan="\033[36m"
+	c_light_grey="\033[37m"
+	c_dark_grey="\033[38m"
+
+	#terrain blocks
+	blocks=(
+		"█"
+		"#"
+		"p"
+		"║"
+		"╚"
+		"╝"
+	)
+	bcolor=(
+		"yellow"
+		"green"
+		"blue"
+		"no"
+		"green"
+		"green"
+	)
 	#sets the color of each block
-	cblock=("\033[33m${blocks[0]}" "\033[32m${blocks[1]}" "\033[34m${blocks[2]}")
+	for ((i=0;i<${#blocks[@]};i++)); do
+		if [[ -n ${bcolor[$i]} ]]; then
+			ins_color=c_${bcolor[$i]}
+		else
+			ins_color=c_no
+		fi
+		cblock[$i]="${!ins_color}${blocks[$i]}"
+	done
+
 	#list of blocks that can be impacted
 	iblock=[${blocks[0]}${blocks[1]}]
 
@@ -32,6 +67,9 @@ function shanks2ini_ {
 		generate-map_
 	fi
 
+	#load the tank graphics
+	. ./graphic/tank/lines.txt
+
 	player_color=2
 	enemy_color=1
 	shot_color=0
@@ -41,8 +79,6 @@ function shanks2ini_ {
 	angle=45
 	speed=10
 	points=0
-	#load the tank graphics
-	. ./graphic/tank/lines.txt
 	wheels=0
 	momentum=0
 	plit=true
@@ -110,6 +146,9 @@ function main_ {
 		plit=true
 		sleep 0.$((speed-smod))
 		input_
+		eval "blockin=\${map${pos[1]}[${pos[0]}]}"
+		blockin=
+		log_ 0 "blockin -> $blockin"
 		if [[ $network = true ]]; then
 			netsend_ p ${pos[@]} d $direction
 		fi
@@ -206,7 +245,7 @@ function mainlogo_ {
 			logos_ title
 			sleep 0.2
 		elif [[ $intitlescreen = false ]]; then
-			logos_ moon
+			logos_ sun
 			sleep 0.7
 		fi
 	done&
@@ -541,6 +580,7 @@ function generate-map_ {
 	hdir=1
 	waterlvl=10
 	border="+-"
+	treeplace=(0 0 0)
 	for ((i=1;i<$((${surface[1]}));i++)); do
 		border="$border""-"
 	done
@@ -566,6 +606,27 @@ function generate-map_ {
 					eval map$j[\$i]=\"${cblock[0]}\"
 				fi
 			done
+
+			if [[ $((RANDOM%6)) = 0 ]] && [[ ${treeplace[0]} = 0 ]]; then
+				treeplace[0]=$((j+1))
+				if [[ $((RANDOM%3)) != 0 ]]; then
+					eval map$((j+1))[\$i]=\"${cblock[4]}\"
+				fi
+				eval map$((j+2))[\$i]=\"${cblock[4]}\"
+			elif [[ ${treeplace[1]} = 1 ]]; then
+				set -x
+				if [[ $((RANDOM%3)) != 0 ]]; then
+					eval map$((treeplace[0]))[\$i]=\"${cblock[5]}\"
+				fi
+				eval map$((treeplace[0]+1))[\$i]=\"${cblock[5]}\"
+				treeplace=(0 0 0)
+				set +x
+			elif [[ ${treeplace[0]} -gt 0 ]]; then
+				treeplace[1]=1
+				eval map$((${treeplace[0]}))[\$i]=\"${cblock[3]}\"
+				eval map$((${treeplace[0]}+1))[\$i]=\"${cblock[3]}\"
+				eval map$((${treeplace[0]}-1))[\$i]=\"${cblock[3]}\"
+			fi
 		elif [[ $waterlvl -gt $height ]]; then
 			for ((j=0;j<$waterlvl;j++)); do
 				if [[ $j -ge $height ]]; then
