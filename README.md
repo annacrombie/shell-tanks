@@ -1,7 +1,7 @@
 #shell-tanks
 ===========
 
-##Descrpition:
+##Description:
 Shell Tanks is a 2d game with randomly generated terrain in which the object is to destroy your opponent by adjusting  the angle of your cannon and firing projectiles that explode on impact with varying sizes depending on which weapon you use.
 
 ##Features:
