@@ -5,7 +5,7 @@ Shell Tanks is a 2d game with randomly generated terrain in which the object is 
 
 ##Features:
 * Rudimentary physics engine used to calculate projectile path and tank falling speed
-* Customizable weapons by editing weap.dat
+* Customizable weapons by editing [weap.dat](https://github.com/annacrombie/shell-tanks/wiki/weap.dat)
 * Slightly intelligent AI
 * Randomly generated terrain with trees and water
 * Easily customizable textures by editing the files in graphics
