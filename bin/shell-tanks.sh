@@ -54,7 +54,7 @@ function shanks2ini_ {
 	fi
 
 	#load the tank graphics
-	. ./graphic/tank/shawn.txt
+	. ./graphic/tank/lines
 
 	player_color=2
 	enemy_color=1
