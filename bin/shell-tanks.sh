@@ -22,23 +22,9 @@ function shanks2ini_ {
 	c_light_grey="\033[37m"
 	c_dark_grey="\033[38m"
 
-	#terrain blocks
-	blocks=(
-		"█"
-		"#"
-		"p"
-		"║"
-		"╚"
-		"╝"
-	)
-	bcolor=(
-		"yellow"
-		"green"
-		"blue"
-		"no"
-		"green"
-		"green"
-	)
+	#load terrain blocks
+	. ./graphic/terrain/default
+
 	#sets the color of each block
 	for ((i=0;i<${#blocks[@]};i++)); do
 		if [[ -n ${bcolor[$i]} ]]; then
@@ -68,7 +54,7 @@ function shanks2ini_ {
 	fi
 
 	#load the tank graphics
-	. ./graphic/tank/lines.txt
+	. ./graphic/tank/shawn.txt
 
 	player_color=2
 	enemy_color=1
@@ -118,8 +104,8 @@ function main_ {
 	if [[ $network = true ]]; then
 		netclient_&
 	else
-		:
-		#ai_&
+		#:
+		ai_&
 	fi
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
@@ -331,6 +317,7 @@ function place-items_ {
 				echo -e "\033[$((${oipos[1]}-1));$((${oipos[0]}))H${ot[0]//_/ }${ot[1]//_/ }\033[${oipos[1]};$((${oipos[0]}+2))H${ot[2]//_/ }"
 			fi
 		elif [[ $1 = projectile ]]; then
+			wateryshot=false
 			rchar="_" maxh=0 breaknext=false
 			for ((i=0;i<${#points[@]};i++)); do
 				if [[ ${points[$i]} -gt $maxh ]]; then
@@ -351,13 +338,18 @@ function place-items_ {
 					oldshot_x=$((shot_x+1))
 				fi
 				if [[ $i != 0 ]]; then
+
 					if [[ $i != 1 ]]; then
 						oldShot=($((oldshot_x+1)) $(echo $((${points[$((i-1))]}-${surface[0]}-1)) | sed 's/-//g'))
-						echo -e "\033[${oldShot[1]};${oldShot[0]}H$rchar"
+						rcx=$((${scx[1]}-1))
+						eval "rchar=\${map${scy[1]}[$rcx]}"
+						log_ 0 "$rchar"
+						echo -e "\033[${oldShot[1]};${oldShot[0]}H${rchar//_/ }"
 					fi
 					if [[ $breaknext = true ]]; then
 						break
 					fi
+					
 					#invert the y
 					pointsInverted=$(echo $((${points[$i]}-${surface[0]}-1)) | sed 's/-//g')
 
@@ -374,16 +366,15 @@ function place-items_ {
 						fi
 						break
 					fi
-					#if the shot goes through walls, replace the walls
-					if [[ ${sb[4]} != "_" ]]; then
-						rchar="${sb[4]}"
-					else
-						rchar=" "
+
+					if [[ ${sb[4]//\\033\[3[0-9]m/} = ${blocks[2]} ]] || [[ ${sb[3]//\\033\[3[0-9]m/} = ${blocks[2]} ]] || [[ ${sb[5]//\\033\[3[0-9]m/} = ${blocks[2]} ]]; then
+						wateryshot=true
+						log_ 0 "wateryshot"
 					fi
 
 					#place the shot
 					echo -e "\033[$pointsInverted;$((shot_x+1))H*"
-					sleep 0.2
+					sleep ${weapon_time[$weapon]}
 
 					if [[ $shottype = split ]] && [[ ${points[$i]} = $maxh ]]; then
 						log_ 0 "shot # $2 split"
@@ -678,7 +669,6 @@ function input_ {
 			update-wheels_
 			poscorrect_
 		elif [[ $key = [${controls[2]}] ]]; then
-			lk="x"
 			memory_ sl
 			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 3 ]] && [[ $((SECONDS-1)) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
 				((shots_fired++))
@@ -692,44 +682,36 @@ function input_ {
 			fi
 			poscorrect_
 		elif [[ $key = [${controls[3]}] ]]; then
-			lk="x"
 			adjust_angle_ "0"
 			plit=false
 		elif [[ $key = [${controls[4]}] ]]; then
-			lk="x"
 			adjust_angle_ "1"
 			plit=false
 		elif [[ $key = [${controls[5]}] ]]; then
-			lk="x"
 			switch_weapon_ "0"
 			plit=false
 		elif [[ $key = [${controls[6]}] ]]; then
-			lk="x"
 			switch_weapon_ "1"
 			plit=false
 		elif [[ $key = [${controls[7]}] ]]; then
-			lk="x"
 			help_
 			read -s -n 1
 			display_
 		fi
 		if [[ $developer = 1 ]]; then
 			if [[ $key = l ]]; then
-				lk="x"
 				display_
 			elif [[ $key = c ]]; then
 				if [[ -f data/tlock ]]; then
 					rm data/tlock
 				fi
-				lk="x"
 				tput cnorm
 				echo -en "\033[2;2H"
 				interactive_
 				tput civis
 				stty -echo -icanon time 0 min 0
 				display_
-			elif [[ $key = p ]]; then
-				lk="x"
+			elif [[ $key = i ]]; then
 				if [[ -f ./data/ailock ]]; then
 					rm -rf ./data/ailock
 				else
@@ -784,7 +766,7 @@ function fire_ {
 		angle=$2
 		shspeed=$3
 	else
-		shspeed=10
+		shspeed=${weapon_speed[$weapon]}
 	fi
 	if [[ $angle -gt 90 ]]; then
 		cangle=($((90-(angle-90))) 1)
@@ -833,6 +815,11 @@ function coord_ {
 	fi
 }
 function explosion_ {
+	if [[ $wateryshot = true ]]; then
+		erchar=("${cblock[2]}" "${cblock[2]}")
+	else
+		erchar=(" " "_")
+	fi
 	e_m=${weapon_damage[$weapon]} # set magnitude
 	#make sure it is odd, it just looks better
 	if [[ $1 = "-b" ]]; then
@@ -900,13 +887,13 @@ function explosion_ {
 				showedexp=1
 				log_ 0 "hit 1"
 			fi
-			eval map${bup1#*.}[\${bup1%.*}]=\"_\"
+			eval map${bup1#*.}[\${bup1%.*}]=\"${erchar[1]}\"
 			local invy=$((${bup1#*.}-${surface[0]}-1))
 			local invy=${invy//-/}
 			if [[ $showedexp = 0 ]]; then
-				echo -e "\033[$invy;$((${bup1%.*}+2))H\033[$((30+explosion_color))m*"&&sleep 0.1&&echo -e "\033[$invy;$((${bup1%.*}+2))H\033[0m "&
+				echo -e "\033[$invy;$((${bup1%.*}+2))H\033[$((30+explosion_color))m*"&&sleep 0.1&&echo -e "\033[$invy;$((${bup1%.*}+2))H\033[0m${erchar[0]}"&
 			else
-				echo -e "\033[$invy;$((${bup1%.*}+2))H\033[31m*"&&sleep 0.1&&echo -e "\033[$invy;$((${bup1%.*}+2))H\033[0m "&
+				echo -e "\033[$invy;$((${bup1%.*}+2))H\033[31m*"&&sleep 0.1&&echo -e "\033[$invy;$((${bup1%.*}+2))H\033[0m${erchar[0]}"&
 			fi
 			showedexp=0
 		fi

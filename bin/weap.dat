@@ -3,34 +3,54 @@ weapon_name=(
 	"mortar"
 	"nuke"
 	"sNuke"
+	"missle"
 )
 weapon_damage=(
 	"3"
 	"5"
 	"11"
 	"11"
+	"3"
+)
+weapon_speed=(
+	"10"
+	"7"
+	"10"
+	"7"
+	"25"
+)
+weapon_time=(
+	"0.2"
+	"0.2"
+	"0.2"
+	"0.2"
+	"0"
 )
 weapon_type=(
 	"normal"
 	"split"
 	"normal"
 	"split"
+	"normal"
 )
 weapon_ammo=(
 	"45"
 	"6"
 	"3"
 	"3"
+	"10"
 )
 weapon_icon_r=(
 	"+--"
 	"X=="
 	"=>>"
 	"//>"
+	"8=>"
 )
 weapon_cost=(
 	"1000"
 	"1500"
 	"2000"
 	"3000"
+	"1500"
 )
