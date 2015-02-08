@@ -8,7 +8,7 @@ Shell Tanks is a 2d game with randomly generated terrain in which the object is 
 * Customizable weapons by editing weap.dat
 * Slightly intelligent AI
 * Randomly generated terrain with trees and water
-* Easily customizable textures by editing the files in graphics and the variables at the top of shell-tanks.sh
+* Easily customizable textures by editing the files in graphics
 * Random explosions based on the weapon you are using
 
 ![Random Terrain Example](/img/terrain.png?raw=true "Random Terrain Example")
