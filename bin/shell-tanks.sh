@@ -22,8 +22,14 @@ function shanks2ini_ {
 	c_light_grey="\033[37m"
 	c_dark_grey="\033[38m"
 
-	#load terrain blocks
-	. ./graphic/terrain/default
+	if [[ -z $terrain_graphics ]]; then
+		terrain_graphics="default"
+	fi
+	if [[ -z $tank_graphics ]]; then
+		tank_graphics="lines"
+	fi
+
+	load_graphics_
 
 	#sets the color of each block
 	for ((i=0;i<${#blocks[@]};i++)); do
@@ -52,9 +58,6 @@ function shanks2ini_ {
 	else
 		generate-map_
 	fi
-
-	#load the tank graphics
-	. ./graphic/tank/lines
 
 	player_color=2
 	enemy_color=1
@@ -93,7 +96,12 @@ function shanks2ini_ {
 
 	audio_ -t theme -l tanktanktank0 tanktanktank1
 }
+function load_graphics_ {
+	. ./graphic/terrain/$terrain_graphics
+	. ./graphic/tank/$tank_graphics
+}
 function main_ {
+	load_graphics_
 	draw_
 	title_screen_
 	turn_lock=0

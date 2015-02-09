@@ -26,6 +26,13 @@ function launch_ {
 				do_ccheck=0
 				developer=1
 				shift
+			elif [[ "$1" = "-g" ]]; then
+				if [[ "$2" = "tank" ]]; then
+					tank_graphics="$3"
+				elif [[ "$2" = "terrain" ]]; then
+					terrain_graphics="$3"
+				fi
+				shift 3
 			elif [[ "$1" = "-n" ]]; then
 				network=true
 				clientid=$2
@@ -92,6 +99,9 @@ function help_ {
 	echo "     client 1 will listen for a finished map, so client 1  "
 	echo "     needs to be started before client 0.  If no ip is supplied,"
 	echo "     it reverts to 127.0.0.1.  This feature is very buggy!"
+	echo " -g <tank, terrain>: specify a graphics file for either the tank "
+	echo "     (located in bin/graphic/tank/) or terrain (located in bin/"
+	echo "     graphic/terrain/"
 	exit
 }
 function ini_ {
