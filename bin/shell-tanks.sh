@@ -726,6 +726,7 @@ function input_ {
 					ai_&
 				fi
 			elif [[ $key = n ]]; then
+				load_weaps_
 				for ((i=0;i<${#mweapon_ammo[@]};i++)); do
 					mweapon_ammo[$i]=99
 				done
