@@ -5,6 +5,7 @@ function shanks2ini_ {
 	oldpos=(${pos[@]})
 	moldpos=(${pos[@]})
 	oldorientation=0
+	rlc=0
 	shots_fired=0
 	last_shot=$SECONDS
 	mkdir -p data/shot
@@ -730,6 +731,8 @@ function input_ {
 				for ((i=0;i<${#mweapon_ammo[@]};i++)); do
 					mweapon_ammo[$i]=99
 				done
+			elif [[ $key = r ]]; then
+				reload_ noini
 			fi
 		fi
 	fi
@@ -757,11 +760,10 @@ function adjust_angle_ {
 	fi
 	aicon=$(echo "$sPos" | sed 's/0/→/g;s/1/↗/g;s/2/↑/g;s/3/↖/g;s/4/←/g')
 	if [[ $orientation = 1 ]]; then
-		tput cup $((${ipos[1]})) $((${ipos[0]}+1))
+		echo -e "\033[$((${ipos[1]}+1));$((${ipos[0]}+2))H$aicon"
 	else
-		tput cup $((${ipos[1]}+1)) $((${ipos[0]}+1))
+		echo -e "\033[$((${ipos[1]}));$((${ipos[0]}+2))H$aicon"
 	fi
-	echo "$aicon"
 	if [[ $2 != ai ]]; then
 		display_stats_
 	fi
@@ -1072,4 +1074,9 @@ function shanks2cleanup_ {
 	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock
 	tput cnorm
 }
-shanks2ini_ "$@"
+if [[ $1 != noini ]]; then
+	shanks2ini_ "$@"
+else
+	echo -e "\033[1;21H\033[05;31mreloaded-($rlc)"
+	((rlc++))
+fi

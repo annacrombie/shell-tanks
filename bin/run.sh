@@ -4,58 +4,16 @@ function launch_ {
 	ini_
 	if [[ -n "$@" ]]; then
 		while [[ -n "$@" ]]; do
-			if [[ "$1" = "-i" ]]; then
-				mode=1
-				logging=1
+			if [[ -z $(echo "$1" | sed 's/[-,a-z]//g') ]] && [[ $(echo $1 | wc -c | awk '{print $1}') -ge 3 ]]; then
+				sargs=($(echo $1 | sed 's/-//g;s/./-& /g'))
+				for ((i=0;i<${#sargs[@]};i++)); do
+					arg_ ${sargs[$i]}
+				done
 				shift
-			elif [[ "$1" = "-v" ]]; then
-				logging=1
-				shift
-			elif [[ "$1" = "-l" ]]; then
-				logging=2
-				shift
-			elif [[ "$1" = "-lf" ]]; then
-				if [[ -d $(dirname $2) ]]; then
-					lf=$2
-				else
-					lf=bad
-				fi
-				shift 2
-			elif [[ "$1" = "-d" ]]; then
-				do_update=0
-				do_ccheck=0
-				developer=1
-				shift
-			elif [[ "$1" = "-g" ]]; then
-				if [[ "$2" = "tank" ]]; then
-					tank_graphics="$3"
-				elif [[ "$2" = "terrain" ]]; then
-					terrain_graphics="$3"
-				fi
-				shift 3
-			elif [[ "$1" = "-n" ]]; then
-				network=true
-				clientid=$2
-				ip=$3
-				shift 3
-			elif [[ "$1" = "-r" ]]; then
-				rm -rf ./data/*
-				shift
-			elif [[ "$1" = "--no-update" ]]; then
-				do_update=0
-				shift
-			elif [[ "$1" = "--force-compatibility" ]]; then
-				do_ccheck=0
-				shift
-			elif [[ "$1" = "-m" ]]; then
-				sound=0
-				shift
-			elif [[ "$1" = "-h" ]]; then
-				help_
-			else
-				echo "Error, Unknown Flag $1, Try -h"
-				exit
+				continue
 			fi
+			arg_ "$@"
+			shift $?
 		done
 	fi
 	if [[ $do_ccheck = 1 ]]; then
@@ -65,11 +23,8 @@ function launch_ {
 		bash update.sh
 	fi
 	log_ i
+	reload_
 	log_ 0 "Initiated"
-	import_ audio.sh
-	import_ physics.sh
-	import_ network.sh
-	import_ shell-tanks.sh $(tput lines) $(tput cols)
 	if [[ $logging = 1 ]]; then
 		echo "->loaded functions: "
 		declare -F | sed 's/declare -f /-->/g'
@@ -82,6 +37,68 @@ function launch_ {
 		interactive_
 	fi
 	exec 2>>$lf
+}
+function arg_ {
+	shiftam=0
+	if [[ "$1" = "-i" ]]; then
+		mode=1
+		logging=1
+		shiftam=1
+	elif [[ "$1" = "-v" ]]; then
+		logging=1
+		shiftam=1
+	elif [[ "$1" = "-l" ]]; then
+		logging=2
+		shiftam=1
+	elif [[ "$1" = "-lf" ]]; then
+		if [[ -d $(dirname $2) ]]; then
+			lf=$2
+		else
+			lf=bad
+		fi
+		shiftam=1 2
+	elif [[ "$1" = "-d" ]]; then
+		do_update=0
+		do_ccheck=0
+		developer=1
+		shiftam=1
+	elif [[ "$1" = "-g" ]]; then
+		if [[ "$2" = "tank" ]]; then
+			tank_graphics="$3"
+		elif [[ "$2" = "terrain" ]]; then
+			terrain_graphics="$3"
+		fi
+		shiftam=3
+	elif [[ "$1" = "-n" ]]; then
+		network=true
+		clientid=$2
+		ip=$3
+		shiftam=3
+	elif [[ "$1" = "-r" ]]; then
+		rm -rf ./data/*
+		shiftam=1
+	elif [[ "$1" = "--no-update" ]]; then
+		do_update=0
+		shiftam=1
+	elif [[ "$1" = "--force-compatibility" ]]; then
+		do_ccheck=0
+		shiftam=1
+	elif [[ "$1" = "-m" ]]; then
+		sound=0
+		shiftam=1
+	elif [[ "$1" = "-h" ]]; then
+		help_
+	else
+		echo "Error, Unknown Flag $1, Try -h"
+		exit
+	fi
+	return $shiftam
+}
+function reload_ {
+	import_ audio.sh
+	import_ physics.sh
+	import_ network.sh
+	import_ shell-tanks.sh $1 $(tput lines) $(tput cols) 
 }
 function help_ {
 	echo "usage: run.sh"
@@ -150,8 +167,10 @@ function log_ {
 		log_ 1 "bad logfile specified, reverting to default"
 	fi
 	if [[ $1 = i ]]; then
-		echo -n "[$(date)] logging to file" > $lf
-		return
+		if [[ $logging = 2 ]]; then
+			echo -n "[$(date)] logging to file $lf" > $lf
+			return
+		fi
 	fi
 	if [[ $logging = 0 ]]; then
 		return 0
