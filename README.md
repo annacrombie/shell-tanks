@@ -16,4 +16,4 @@ Shell Tanks is a 2d game with randomly generated terrain in which the object is 
 
 ##Credits:
 * the shell tanks isometric text is from http://www.network-science.de/ascii/
-* the title theme is by me [soundcloud](http://www.soundcloud.com/abduction_nugget/)
+* the title theme is by me -> [soundcloud](http://www.soundcloud.com/abduction_nugget/)
