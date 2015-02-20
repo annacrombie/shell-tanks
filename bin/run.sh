@@ -117,7 +117,6 @@ function ini_ {
 	sound=1
 	logging=2
 	network=false
-	err_ -i
 }
 function import_ {
 	n=$1; shift

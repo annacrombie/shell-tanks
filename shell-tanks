@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Make sure we are in the right directory...
+
+if [[ -d ./bin ]] && [[ -f ./bin/run.sh ]] && [[ -f ./bin/shell-tanks.sh ]]; then
+	cd ./bin/
+elif [[ -f run.sh ]] && [[ -f shell-tanks.sh ]]; then
+	cd .
+else
+	echo "error, you need to at least be in the root of the repository"
+	exit
+fi
+
+# Run shell-tanks
+
+bash run.sh
