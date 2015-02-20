@@ -1,5 +1,8 @@
 #!/bin/bash
 function launch_ {
+	LINES=$(tput lines)
+	COLS=$(tput cols)
+	exec 2>./shell-tanks-error.log
 	trap "cleanup_" int
 	ini_
 	if [[ -n "$@" ]]; then
@@ -36,7 +39,6 @@ function launch_ {
 	elif [[ $mode = 1 ]]; then
 		interactive_
 	fi
-	exec 2>>$lf
 }
 function arg_ {
 	shiftam=0
@@ -98,7 +100,7 @@ function reload_ {
 	import_ audio.sh
 	import_ physics.sh
 	import_ network.sh
-	import_ shell-tanks.sh $1 $(tput lines) $(tput cols) 
+	import_ shell-tanks.sh $1 $LINES $COLS
 }
 function help_ {
 	echo "usage: run.sh"

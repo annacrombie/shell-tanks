@@ -95,7 +95,7 @@ function shanks2ini_ {
 	tput civis
 	echo -n -e "\033]0;shell-tanks build $(cat ../ver.txt)\007"
 
-	audio_ -t theme -l tanktanktank0 tanktanktank1
+	audio_ -t theme -l maintheme
 }
 function load_graphics_ {
 	. ./graphic/terrain/$terrain_graphics
@@ -759,6 +759,7 @@ function adjust_angle_ {
 		sPos=${sPos[0]}
 	fi
 	aicon=$(echo "$sPos" | sed 's/0/→/g;s/1/↗/g;s/2/↑/g;s/3/↖/g;s/4/←/g')
+	audio_ -t fx angle
 	if [[ $orientation = 1 ]]; then
 		echo -e "\033[$((${ipos[1]}+1));$((${ipos[0]}+2))H$aicon"
 	else
@@ -920,6 +921,7 @@ function display_health_ {
 }
 function switch_weapon_ {
 	log_ 0 "switch_weapon_: switching $1"
+	ipos=( $((${pos[0]}+1)) $((pos[1]-surface[0]-1)) )
 	if [[ $1 = "0" ]]; then
 		((weapon--))
 	elif [[ $1 = "1" ]]; then
@@ -936,7 +938,7 @@ function switch_weapon_ {
 		dicon=${weapon_icon_r[$weapon]}
 	fi
 	if [[ $orientation = "1" ]]; then
-		echo -e "\033[$((${ipos[1]}));$((${ipos[0]}))H$dicon"
+		echo -e "\033[$((${ipos[1]/-/}));$((${ipos[0]}))H$dicon"
 	fi
 	display_stats_
 	shottype=${weapon_type[$weapon]}
@@ -983,7 +985,8 @@ function help_ {
 		hd="$(echo -e "$hd\n""| ${controls[$i]:1} ${control_desc[$i]} |")"
 	done
 	hb="+"
-	for ((i=0;i<$(($(echo "$hd" | sed -n '2p' | wc -c)+9));i++)); do
+	hdl=$(($(echo "$hd" | sed -n '2p' | wc -c)+9))
+	for ((i=0;i<$hdl;i++)); do
 		hb="$hb""-"
 	done
 	hb="$hb""+"
