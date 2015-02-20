@@ -1,4 +1,4 @@
-function shanks2ini_ {
+function st_ini_ {
 	surface=("$(($1-2))" "$(($2-2))")
 	log_ 0 "shanks2.sh set surface to ${surface[0]}x${surface[1]}"
 	pos=($((RANDOM%$((${surface[1]}-2))+2)) $((RANDOM%$((${surface[0]}-15))+13)))
@@ -142,7 +142,6 @@ function main_ {
 		sleep 0.$((speed-smod))
 		input_
 		eval "blockin=\${map${pos[1]}[${pos[0]}]}"
-		blockin=
 		log_ 0 "blockin -> $blockin"
 		if [[ $network = true ]]; then
 			netsend_ p ${pos[@]} d $direction
@@ -614,13 +613,11 @@ function generate-map_ {
 				fi
 				eval map$((j+2))[\$i]=\"${cblock[4]}\"
 			elif [[ ${treeplace[1]} = 1 ]]; then
-				set -x
 				if [[ $((RANDOM%3)) != 0 ]]; then
 					eval map$((treeplace[0]))[\$i]=\"${cblock[5]}\"
 				fi
 				eval map$((treeplace[0]+1))[\$i]=\"${cblock[5]}\"
 				treeplace=(0 0 0)
-				set +x
 			elif [[ ${treeplace[0]} -gt 0 ]]; then
 				treeplace[1]=1
 				eval map$((${treeplace[0]}))[\$i]=\"${cblock[3]}\"
@@ -1073,12 +1070,12 @@ function game_over_ {
 	sleep 2
 	cleanup_
 }
-function shanks2cleanup_ {
+function st_cleanup_ {
 	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock
 	tput cnorm
 }
 if [[ $1 != noini ]]; then
-	shanks2ini_ "$@"
+	st_ini_ "$@"
 else
 	echo -e "\033[1;21H\033[05;31mreloaded-($rlc)"
 	((rlc++))

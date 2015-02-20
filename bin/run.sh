@@ -120,7 +120,7 @@ function ini_ {
 }
 function import_ {
 	n=$1; shift
-	. $dir/$n "$@" && log_ 0 "successfully imported $n" || log_ 2 "failed to import $n"
+	. $dir/$n "$@" && log_ 0 "successfully imported $n" || log_ 2 "failed to import $n, check shell-tanks-error.log"
 }
 function log_ {
 	if [[ -z $lf ]]; then
@@ -173,7 +173,7 @@ function debug_ {
 function cleanup_ {
 	log_ 0 "exiting"
 	stty $oldstty
-	shanks2cleanup_
+	st_cleanup_
 	while [[ $(ps aux | grep mplayer | grep -v grep) ]]; do
 		killall mplayer 2>/dev/null
 	done
