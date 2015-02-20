@@ -19,21 +19,15 @@ function launch_ {
 			shift $?
 		done
 	fi
-	if [[ $do_ccheck = 1 ]]; then
-		bash compatibility.sh
-	fi
-	if [[ $do_update = 1 ]]; then
-		bash update.sh
-	fi
 	log_ i
+	echo -e "Loading\033[05m...\033[0m"
 	reload_
 	log_ 0 "Initiated"
 	if [[ $logging = 1 ]]; then
 		echo "->loaded functions: "
-		declare -F | sed 's/declare -f /-->/g'
+		declare -F | sed 's/declare -f /--> /g'
 	fi
 	log_ 0 "Import Finished"
-	audio_ -t fx startup
 	if [[ $mode = 0 ]]; then
 		main-loop_
 	elif [[ $mode = 1 ]]; then
@@ -60,8 +54,6 @@ function arg_ {
 		fi
 		shiftam=1 2
 	elif [[ "$1" = "-d" ]]; then
-		do_update=0
-		do_ccheck=0
 		developer=1
 		shiftam=1
 	elif [[ "$1" = "-g" ]]; then
@@ -78,12 +70,6 @@ function arg_ {
 		shiftam=3
 	elif [[ "$1" = "-r" ]]; then
 		rm -rf ./data/*
-		shiftam=1
-	elif [[ "$1" = "--no-update" ]]; then
-		do_update=0
-		shiftam=1
-	elif [[ "$1" = "--force-compatibility" ]]; then
-		do_ccheck=0
 		shiftam=1
 	elif [[ "$1" = "-m" ]]; then
 		sound=0
@@ -108,9 +94,7 @@ function help_ {
 	echo " -l: log to file"
 	echo " -v: log to stty, turned on by -i"
 	echo " -r: remove data folder on launch (if shell-tanks did not cleanup)"
-	echo " -d: developer mode, equivalent to next two flags"
-	echo "     --no-update: dont check for update"
-	echo "     --force-compatibility: dont check for compatibility"
+	echo " -d: developer mode, enables a few top secret cheats"
 	echo " -i: interactive mode, turns on logging to stty by default"
 	echo " -m: mute all audio"
 	echo " -n <client id> <peer ip>: turns on network mode, client id"
@@ -126,8 +110,6 @@ function help_ {
 function ini_ {
 	dlf="./shell-tanks.log"
 	oldstty=$(stty -g)
-	do_update=1
-	do_ccheck=1
 	developer=0
 	mode=0
 	dir=$(dirname $0)
@@ -138,28 +120,8 @@ function ini_ {
 	err_ -i
 }
 function import_ {
-	if [[ $1 = -r ]]; then
-		if [[ $2 = success ]]; then
-			log_ 0 "successfully imported $3"
-		elif [[ $2 = fail ]]; then
-			log_ 2 "failed to import $3, $(err_ -r)"
-		fi
-	else
-		n=$1; shift
-		. $dir/$n "$@" 2>/tmp/shanks2err&&import_ -r success $n || import_ -r success $n
-	fi
-}
-function err_ {
-	if [[ $1 = -i ]]; then
-		if [[ -f /tmp/shanks2err ]]; then
-			rm /tmp/shanks2err
-		fi
-	elif [[ $1 = -r ]]; then
-		if [[ -f /tmp/shanks2err ]]; then
-			cat /tmp/shanks2err
-			err_ -i
-		fi
-	fi
+	n=$1; shift
+	. $dir/$n "$@" && log_ 0 "successfully imported $n" || log_ 2 "failed to import $n"
 }
 function log_ {
 	if [[ -z $lf ]]; then
@@ -211,13 +173,12 @@ function debug_ {
 }
 function cleanup_ {
 	log_ 0 "exiting"
-	err_ -i
-	echo -n -e "\033]0;\007"
 	stty $oldstty
 	shanks2cleanup_
 	while [[ $(ps aux | grep mplayer | grep -v grep) ]]; do
 		killall mplayer 2>/dev/null
 	done
+	echo -en "\033]0;\007\033[0m"
 	exit
 }
 function interactive_ {
@@ -227,7 +188,7 @@ function interactive_ {
 	hnum=0
 	echo "press escape and enter to enter history mode"
 	while true; do
-		read -p ">>> " key
+		read -p ">>> " key 2>&1
 		if [[ "$key" =  ]]; then
 			hc=$((hnum-1))
 			echo -en "\033[s"

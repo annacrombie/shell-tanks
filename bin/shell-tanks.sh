@@ -471,7 +471,7 @@ function shop_ {
 			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts      |"
 		done
 		echo -e "\033[$((6+i));6H+---------------------------+"
-		read -p "$(echo -e "\033[$((6+i+1));6HItem to buy >> ")" item
+		read -p "$(echo -e "\033[$((6+i+1));6HItem to buy >> ")" item 2>&1
 		if [[ $item = x ]]; then
 			break
 		elif [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
