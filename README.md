@@ -13,11 +13,11 @@ Shell Tanks is a 2d game with randomly generated terrain in which the object is 
 	
 * You can install directly from github using
 
-    git clone https://github.com/annacrombie/shell-tanks.git
+	git clone https://github.com/annacrombie/shell-tanks.git
 
 * Then run this
 
-    ./shell-tanks
+	./shell-tanks
 
 ##Features:
 * Rudimentary physics engine used to calculate projectile path and tank falling speed
