@@ -120,7 +120,8 @@ function ini_ {
 }
 function import_ {
 	n=$1; shift
-	. $dir/$n "$@" && log_ 0 "successfully imported $n" || log_ 2 "failed to import $n, check shell-tanks-error.log"
+	. $dir/$n "$@"
+	log_ 0 "imported $n"
 }
 function log_ {
 	if [[ -z $lf ]]; then

@@ -11,6 +11,8 @@ function st_ini_ {
 	mkdir -p data/shot
 	weapexplode=true
 
+	langset_
+
 	#colors
 	c_no="\033[0m"
 	c_black="\033[30m"
@@ -101,10 +103,30 @@ function load_graphics_ {
 	. ./graphic/terrain/$terrain_graphics
 	. ./graphic/tank/$tank_graphics
 }
+function langset_ {
+	for locale in $(locale -a); do
+		LANG=$locale
+		if [[ "╚" = [█#] ]]; then
+			ltest1="failed"
+		else
+			ltest1="passed"
+		fi
+		if [[ "█" = [█#] ]]; then
+			ltest2="passed"
+		else
+			ltest2="failed"
+		fi
+		if [[ $ltest1 = "passed" ]] && [[ $ltest2 = "passed" ]]; then
+			declare -x LANG=$locale
+			log_ 0 "detected LANG - $LANG as working, setting LANG."
+			break
+		fi
+	done
+}
 function main_ {
 	load_graphics_
 	draw_
-	title_screen_
+	#title_screen_
 	turn_lock=0
 	memory_ sh 0 $health
 	memory_ sh 1 $health
@@ -113,8 +135,8 @@ function main_ {
 	if [[ $network = true ]]; then
 		netclient_&
 	else
-		#:
-		ai_&
+		:
+		#ai_&
 	fi
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
@@ -142,7 +164,6 @@ function main_ {
 		sleep 0.$((speed-smod))
 		input_
 		eval "blockin=\${map${pos[1]}[${pos[0]}]}"
-		log_ 0 "blockin -> $blockin"
 		if [[ $network = true ]]; then
 			netsend_ p ${pos[@]} d $direction
 		fi
