@@ -1,5 +1,20 @@
 #!/bin/bash
-trap "cleanup_" int
+function launch_ {
+	trap "cleanup_" int
+	local=false
+	if [[ -n "$@" ]]; then
+		while [[ -n "$@" ]]; do
+			parseargs_ $@
+			shift $?
+		done
+	fi
+}
+function parseargs_ {
+	if [[ $1 = -l ]]; then
+		local=true
+		return 1
+	fi
+}
 function cleanup_ {
 	echo -e "\033[36mCleaning Up..."
 	rm -rf ~/shell-tanks.tar.gz ~/i.sh
@@ -28,13 +43,24 @@ rm -rf ./bin/compatible ./bin/shell-tanks.log ./bin/data
 echo -e "\033[36mmaking tarball"
 tar -cf ~/.shell-tanks.tar *
 gzip ~/.shell-tanks.tar
-mv ~/.shell-tanks.tar.gz ~/shell-tanks.tar.gz
+if [[ $local = false ]]; then
+	mv ~/.shell-tanks.tar.gz ~/shell-tanks.tar.gz
+elif [[ $local = true ]]; then
+	mv ~/.shell-tanks.tar.gz ~/www/boozon/st/shell-tanks.tar.gz
+fi
 echo -e "\033[36mconverting installer"
-cat utils/install.sh | tr '\n' '; ' > ~/i.sh
-echo -e "\033[36mUploading Package..."
-read -p "ftp:username >> " usr
-read -s -p "ftp:password >> " pass
-echo ""
-curl -u $usr:$pass -T "{$HOME/shell-tanks.tar.gz,ver.txt,$HOME/i.sh}" ftp://162.238.92.18/www/boozon/st/
-
+if [[ $local = false ]]; then
+	cat utils/install.sh | tr '\n' '; ' > ~/i.sh
+elif [[ $local = true ]]; then
+	cat utils/install.sh | tr '\n' '; ' > ~/www/boozon/st/i.sh
+fi
+if [[ $local = false ]]; then
+	echo -e "\033[36mUploading Package..."
+	read -p "ftp:username >> " usr
+	read -s -p "ftp:password >> " pass
+	echo ""
+	curl -u $usr:$pass -T "{$HOME/shell-tanks.tar.gz,ver.txt,$HOME/i.sh}" ftp://162.238.92.18/www/boozon/st/
+elif [[ $local = true ]]; then
+	cat ver.txt > ~/www/boozon/st/ver.txt
+fi
 cleanup_
