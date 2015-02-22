@@ -126,7 +126,7 @@ function langset_ {
 function main_ {
 	load_graphics_
 	draw_
-	#title_screen_
+	title_screen_
 	turn_lock=0
 	memory_ sh 0 $health
 	memory_ sh 1 $health
@@ -135,8 +135,8 @@ function main_ {
 	if [[ $network = true ]]; then
 		netclient_&
 	else
-		:
-		#ai_&
+		#:
+		ai_&
 	fi
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
