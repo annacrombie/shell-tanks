@@ -98,6 +98,9 @@ function st_ini_ {
 	echo -n -e "\033]0;shell-tanks build $(cat ../ver.txt)\007"
 
 	audio_ -t theme -l maintheme
+	#rm -rf data/mcontrol
+	#mkfifo data/mcontrol
+	#mplayer -slave -quiet audio/theme/maintheme.ogg -input file=data/mcontrol 2>&1 >/dev/null&
 }
 function load_graphics_ {
 	. ./graphic/terrain/$terrain_graphics
@@ -162,12 +165,30 @@ function main_ {
 		fi
 		plit=true
 		sleep 0.$((speed-smod))
+		checkblock_
 		input_
-		eval "blockin=\${map${pos[1]}[${pos[0]}]}"
 		if [[ $network = true ]]; then
 			netsend_ p ${pos[@]} d $direction
 		fi
 	done
+}
+function checkblock_ {
+	set -x
+	oldblockin="$blockin"
+	eval "blockin=\${map${pos[1]}[${pos[0]}]}"
+	if [[ "$oldblockin" != "$blockin" ]]; then
+		if [[ "$blockin" = "${cblock[2]}" ]]; then	
+			animation_ splash&
+			#echo "af_add equalizer=0:0:0:0:0:-12:-12:-12:-12:-12" | data/mcontrol
+			if [[ $1 = falling ]]; then
+				fell=1
+			fi
+		elif [[ "$blockin" = "_" ]]; then
+			:
+			#echo "af_add equalizer=0:0:0:0:0:0:0:0:0:0" | data/mcontrol
+		fi
+	fi
+	set +x
 }
 function logos_ {
 	if [[ $logosize = small ]]; then
@@ -254,8 +275,11 @@ function logos_ {
 	fi
 }
 function mainlogo_ {
-	touch ./data/tlock
-	while [[ -f ./data/tlock ]]; do
+	mkdir -p ./data/tlock
+	logoid=$RANDOM
+	touch ./data/tlock/$logoid
+	
+	while [[ -f ./data/tlock/$logoid ]]; do
 		if [[ $intitlescreen = true ]]; then
 			logos_ title
 			sleep 0.2
@@ -346,7 +370,7 @@ function place-items_ {
 				echo -e "\033[$((${oipos[1]}-1));$((${oipos[0]}))H${ot[0]//_/ }${ot[1]//_/ }\033[${oipos[1]};$((${oipos[0]}+2))H${ot[2]//_/ }"
 			fi
 		elif [[ $1 = projectile ]]; then
-			wateryshot=false
+			wateryshot=true
 			rchar="_" maxh=0 breaknext=false
 			for ((i=0;i<${#points[@]};i++)); do
 				if [[ ${points[$i]} -gt $maxh ]]; then
@@ -397,8 +421,12 @@ function place-items_ {
 					fi
 
 					if [[ ${sb[4]//\\033\[3[0-9]m/} = ${blocks[2]} ]] || [[ ${sb[3]//\\033\[3[0-9]m/} = ${blocks[2]} ]] || [[ ${sb[5]//\\033\[3[0-9]m/} = ${blocks[2]} ]]; then
-						wateryshot=true
-						log_ 0 "wateryshot"
+						if [[ $wateryshot = false ]]; then
+							wateryshot=true
+							animation_ smallsplash $pointsInverted $((shot_x+1))&
+						fi
+					else
+						wateryshot=false
 					fi
 
 					#place the shot
@@ -447,6 +475,7 @@ function tank_ {
 			if [[ $isai = true ]] && [[ ! -f data/ailock ]]; then
 				break
 			fi
+			checkblock_ falling
 			place-items_ tank
 			orientation=1
 			pos[1]=$((${pos[1]}-1))
@@ -834,6 +863,42 @@ function animation_ {
 		sleep 0.2
 		echo -e "\033[$invy;$((${pos[0]}+4))H${rchar[1]//_/ }"
 		echo -e "\033[$invy;${pos[0]}H${rchar[0]//_/ }"
+	elif [[ $1 = splash ]]; then
+		fbtch=($((${pos[0]}-2)) $((${pos[0]}+2)))
+		rchary=$((${pos[1]}+1))
+		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
+		local invy=$(echo $((${pos[1]}-${surface[0]})) | sed 's/-//g')
+		echo -e "\033[$invy;$((${pos[0]}+4))H${cblock[2]}"
+		echo -e "\033[$invy;${pos[0]}H${cblock[2]}"
+		sleep 0.2
+		echo -e "\033[$invy;$((${pos[0]}+4))H${rchar[1]//_/ }"
+		echo -e "\033[$invy;${pos[0]}H${rchar[0]//_/ }"
+		fbtch=($((${pos[0]}-3)) $((${pos[0]}+3)))
+		
+		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
+		local invy=$(echo $((${pos[1]}-${surface[0]})) | sed 's/-//g')
+		echo -e "\033[$invy;$((${pos[0]}+5))H${cblock[2]}"
+		echo -e "\033[$invy;$((${pos[0]}-1))H${cblock[2]}"
+		sleep 0.2
+		echo -e "\033[$invy;$((${pos[0]}+5))H${rchar[1]//_/ }"
+		echo -e "\033[$invy;$((${pos[0]}-1))H${rchar[0]//_/ }"
+	elif [[ $1 = smallsplash ]]; then
+		fbtch=($3 $3)
+		rchary=$2
+		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
+		local invy=$(($2-1))
+		echo -e "\033[$invy;$((${3}+1))H${cblock[2]}"
+		echo -e "\033[$invy;$((${3}-1))H${cblock[2]}"
+		sleep 0.2
+		echo -e "\033[$invy;$((${3}+1))H${rchar[1]//_/ }"
+		echo -e "\033[$invy;$((${3}-1))H${rchar[0]//_/ }"
+		fbtch=($(($3-1)) $(($3+1)))
+		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
+		echo -e "\033[$invy;$((${3}+2))H${cblock[2]}"
+		echo -e "\033[$invy;$((${3}-2))H${cblock[2]}"
+		sleep 0.2
+		echo -e "\033[$invy;$((${3}+2))H${rchar[1]//_/ }"
+		echo -e "\033[$invy;$((${3}-2))H${rchar[0]//_/ }"
 	fi
 }
 function coord_ {
@@ -917,6 +982,11 @@ function explosion_ {
 				showedexp=1
 				log_ 0 "hit 1"
 			fi
+			if [[ $((${bup1#*.}+1)) -le $waterlvl ]]; then
+				erchar=("${cblock[2]}" "${cblock[2]}")
+			else
+				erchar=(" " "_")
+			fi
 			eval map${bup1#*.}[\${bup1%.*}]=\"${erchar[1]}\"
 			local invy=$((${bup1#*.}-${surface[0]}-1))
 			local invy=${invy//-/}
@@ -980,7 +1050,7 @@ function display_stats_ {
 	echo -e "\033[4;$((${surface[1]}-27))HPoints: $(printf "%-10s %s" $points)"
 }
 function display_ {
-	if [[ -f ./data/tlock ]]; then
+	if [[ -d ./data/tlock/ ]]; then
 		rm -rf ./data/tlock
 		wastlock=true
 	else
@@ -1092,7 +1162,7 @@ function game_over_ {
 	cleanup_
 }
 function st_cleanup_ {
-	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock
+	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol
 	tput cnorm
 }
 if [[ $1 != noini ]]; then

@@ -11,6 +11,7 @@ function audio_ {
 	loopAudio=1
 	stopAudio=0
 	audioVolume=50
+	slave=false
 	if [[ -n $* ]]; then
 		while [[ -n $* ]]; do
 			if [[ $1 = -s ]]; then

@@ -173,10 +173,17 @@ function debug_ {
 }
 function cleanup_ {
 	log_ 0 "exiting"
+	set -x
 	stty $oldstty
 	st_cleanup_
+	mpkilltries=0
 	while [[ $(ps aux | grep mplayer | grep -v grep) ]]; do
 		killall mplayer 2>/dev/null
+		if [[ $mpkilltries -gt 10 ]]; then
+			break
+		else
+			((mpkilltries++))
+		fi
 	done
 	echo -en "\033]0;\007\033[0m"
 	exit
