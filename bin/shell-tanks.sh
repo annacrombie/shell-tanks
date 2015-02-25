@@ -173,22 +173,26 @@ function main_ {
 	done
 }
 function checkblock_ {
-	set -x
 	oldblockin="$blockin"
 	eval "blockin=\${map${pos[1]}[${pos[0]}]}"
 	if [[ "$oldblockin" != "$blockin" ]]; then
-		if [[ "$blockin" = "${cblock[2]}" ]]; then	
-			animation_ splash&
-			#echo "af_add equalizer=0:0:0:0:0:-12:-12:-12:-12:-12" | data/mcontrol
-			if [[ $1 = falling ]]; then
-				fell=1
-			fi
-		elif [[ "$blockin" = "_" ]]; then
+		if [[ $1 = "-n" ]]; then
 			:
-			#echo "af_add equalizer=0:0:0:0:0:0:0:0:0:0" | data/mcontrol
+		else
+			if [[ "$blockin" = "${cblock[2]}" ]]; then	
+				animation_ splash&
+				#echo "af_add equalizer=0:0:0:0:0:-12:-12:-12:-12:-12" | data/mcontrol
+				if [[ $1 = falling ]]; then
+					fell=1
+				fi
+			elif [[ "$blockin" = "_" ]]; then
+				:
+				#echo "af_add equalizer=0:0:0:0:0:0:0:0:0:0" | data/mcontrol
+			elif [[ ${blockin//\\033\[3[0-9]m/} = $iblock ]]; then
+				pos=(${oldpos[@]})
+			fi
 		fi
 	fi
-	set +x
 }
 function logos_ {
 	if [[ $logosize = small ]]; then
@@ -800,11 +804,13 @@ function adjust_angle_ {
 	fi
 	#straight from shanks 1!
 	sPos=($(awk "BEGIN {print $angle / 50}" | sed 's/[.]/ /g'))
-	if [[ $(echo ${sPos[1]} | sed 's/./& /g' | awk '{print $1}') -ge 6 ]]; then
-		sPos=$((${sPos[0]}+1))
+	sPos=$((angle/50))
+	if [[ $angle -le 30 ]]; then
+		sPos=0
 	else
-		sPos=${sPos[0]}
+		sPos=$((sPos+1))
 	fi
+	echo $sPos
 	aicon=$(echo "$sPos" | sed 's/0/→/g;s/1/↗/g;s/2/↑/g;s/3/↖/g;s/4/←/g')
 	audio_ -t fx angle
 	if [[ $orientation = 1 ]]; then
@@ -884,21 +890,15 @@ function animation_ {
 		echo -e "\033[$invy;$((${pos[0]}-1))H${rchar[0]//_/ }"
 	elif [[ $1 = smallsplash ]]; then
 		fbtch=($3 $3)
-		rchary=$2
+		rchary=$waterlvl
 		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
-		local invy=$(($2-1))
+		local invy=$((waterlvl-surface[0]-1))
+		log_ 0 "$invy"
 		echo -e "\033[$invy;$((${3}+1))H${cblock[2]}"
 		echo -e "\033[$invy;$((${3}-1))H${cblock[2]}"
 		sleep 0.2
 		echo -e "\033[$invy;$((${3}+1))H${rchar[1]//_/ }"
 		echo -e "\033[$invy;$((${3}-1))H${rchar[0]//_/ }"
-		fbtch=($(($3-1)) $(($3+1)))
-		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
-		echo -e "\033[$invy;$((${3}+2))H${cblock[2]}"
-		echo -e "\033[$invy;$((${3}-2))H${cblock[2]}"
-		sleep 0.2
-		echo -e "\033[$invy;$((${3}+2))H${rchar[1]//_/ }"
-		echo -e "\033[$invy;$((${3}-2))H${rchar[0]//_/ }"
 	fi
 }
 function coord_ {
