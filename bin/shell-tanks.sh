@@ -138,7 +138,6 @@ function main_ {
 	if [[ $network = true ]]; then
 		netclient_&
 	else
-		#:
 		ai_&
 	fi
 	while [[ $turn_lock = 0 ]]; do

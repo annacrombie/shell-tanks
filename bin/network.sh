@@ -19,48 +19,31 @@ function netmain_ {
 function netmap_ {
 	if [[ $1 = get ]]; then
 		log_ 0 "[server] getting data from ${port[$clientid]}"
-		echo "waiting for a connection..."
-		if [[ $(uname) = "Darwin" ]]; then
-			r=$(echo "c" | nc -l ${port[$clientid]})
-		elif [[ $(uname) = "Linux" ]]; then
-			r=$(echo "c" | nc -l -p ${port[$clientid]} -q 0)
-		fi
 		echo "waiting for surface on port ${port[$clientid]}"
 		netlisten_
 		echo "generating map borders based on new surface ${surface[@]}"
 		generate-map_ ds
+		netsend_
 		echo "waiting for final map on port ${port[$clientid]}"
 		if [[ $(uname) = "Darwin" ]]; then
-			echo "r" | nc -l ${port[$clientid]} > data/ms
+			echo "[client] recieving map" | nc -l ${port[$clientid]} > data/ms
 		elif [[ $(uname) = "Linux" ]]; then
-			echo "r" | nc -l -p ${port[$clientid]} -q 0 > data/ms
+			echo "[client] recieving map" | nc -l -p ${port[$clientid]} -q 0 > data/ms
 		fi
 	elif [[ $1 = send ]]; then
 		log_ 0 "[server] sending map to $ip ${port[$oclientid]}"
-		for ((i=0;i<$tries;i++)); do
-			r=$(netsend_ c)
-			if [[ $r = c ]]; then
-				break
-			fi
-			if [[ $i = 2 ]]; then
-				echo "connection failed"
-				exit
-			fi
-			sleep 0.5
-		done
 		echo "sending surface ${surface[@]}"
-		netsend_ s ${surface[@]}
-		sleep 1
+		netsend_ "s ${surface[@]}"
+		netlisten_
 		echo "sending map"
 		cat data/ms | nc $ip ${port[$oclientid]}
 	fi
-	exit
 }
 function netlisten_ {
 	if [[ $(uname) = "Darwin" ]]; then
-		echo "r" | nc -l ${port[$clientid]} > data/heard
+		echo "recieved" | nc -l ${port[$clientid]} > data/heard
 	elif [[ $(uname) = "Linux" ]]; then
-		echo "r" | nc -l -p ${port[$clientid]} -q 0 > data/heard
+		echo "recieved" | nc -l -p ${port[$clientid]} -q 0 > data/heard
 	fi
 	heard=$(cat data/heard)
 	log_ 0 "[server] heard: $heard"
@@ -91,7 +74,7 @@ function netinterpret_ {
 	done
 }
 function netsend_ {
-	echo "$@" | nc $ip ${port[$oclientid]}
+	echo "$@" | nc $ip ${port[$oclientid]} 1>&2
 }
 function netclient_ {
 	touch data/netlock
