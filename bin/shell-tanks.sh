@@ -1,7 +1,7 @@
 function st_ini_ {
 	surface=("$(($1-2))" "$(($2-2))")
 	log_ 0 "shanks2.sh set surface to ${surface[0]}x${surface[1]}"
-	pos=($((RANDOM%$((${surface[1]}-2))+2)) $((RANDOM%$((${surface[0]}-15))+13)))
+	pos=($((RANDOM%$((${surface[1]}-2))+2)) $(( surface[0] - ( surface[0] / 4 ) )) )
 	oldpos=(${pos[@]})
 	moldpos=(${pos[@]})
 	oldorientation=0
@@ -49,7 +49,6 @@ function st_ini_ {
 
 	if [[ $network = true ]]; then
 		if [[ $clientid = 0 ]]; then
-			log_ 0 "generating map"
 			generate-map_
 			log_ 0 "sending map"
 			netmap_ send
@@ -68,7 +67,7 @@ function st_ini_ {
 	explosion_color=3
 	health=20
 	smod=0
-	angle=45
+	angle=90
 	speed=10
 	points=0
 	wheels=0
@@ -146,7 +145,12 @@ function main_ {
 			points=$(( points + ( 1000 + ( 100 * aikilled ) ) ))
 			rm -rf ./data/shot ./data/tlock
 			mkdir data/shot
+			tput cnorm
+			stty $oldstty
 			shop_
+			tput civis
+			stty -echo -icanon time 0 min 0
+			display_
 			mainlogo_
 			memory_ sh 0 $health
 			memory_ sh 1 $(( health + ( 5 * aikilled ) ))
@@ -180,16 +184,17 @@ function checkblock_ {
 		else
 			if [[ "$blockin" = "${cblock[2]}" ]]; then	
 				animation_ splash&
-				#echo "af_add equalizer=0:0:0:0:0:-12:-12:-12:-12:-12" | data/mcontrol
-				if [[ $1 = falling ]]; then
-					fell=1
-				fi
+				#echo "af_add equalizer=0:0:0:0:0:-12:-12:-12:-12:-12" > data/mcontrol
 			elif [[ "$blockin" = "_" ]]; then
 				:
-				#echo "af_add equalizer=0:0:0:0:0:0:0:0:0:0" | data/mcontrol
+				#echo "af_add equalizer=0:0:0:0:0:0:0:0:0:0" > data/mcontrol
 			elif [[ ${blockin//\\033\[3[0-9]m/} = $iblock ]]; then
 				pos=(${oldpos[@]})
 			fi
+		fi
+	else
+		if [[ "$blockin" = "${cblock[2]}" ]] && [[ $1 = falling ]]; then	
+			sleep 0.3
 		fi
 	fi
 }
@@ -399,7 +404,6 @@ function place-items_ {
 						oldShot=($((oldshot_x+1)) $(echo $((${points[$((i-1))]}-${surface[0]}-1)) | sed 's/-//g'))
 						rcx=$((${scx[1]}-1))
 						eval "rchar=\${map${scy[1]}[$rcx]}"
-						log_ 0 "$rchar"
 						echo -e "\033[${oldShot[1]};${oldShot[0]}H${rchar//_/ }"
 					fi
 					if [[ $breaknext = true ]]; then
@@ -514,19 +518,17 @@ function tank_ {
 	fi
 }
 function shop_ {
-	tput cnorm
-	stty $oldstty
 	bLg=2
 	while true; do
-		echo -e "\033[5;6H+-=SHOP=-x to exit----------+"
+		echo -e "\033[5;6H+-=SHOP=-x to exit------+"
 		for ((i=0;i<${#weapon_name[@]};i++)); do
-			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts      |"
+			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts  |"
 		done
-		echo -e "\033[$((6+i));6H+---------------------------+"
+		echo -e "\033[$((6+i));6H+-----------------------+"
 		read -p "$(echo -e "\033[$((6+i+1));6HItem to buy >> ")" item 2>&1
 		if [[ $item = x ]]; then
 			break
-		elif [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
+		elif [[ -n $item ]] && [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
 			if [[ $points -ge ${weapon_cost[$item]} ]]; then
 				points=$((points-${weapon_cost[$item]}))
 				mweapon_ammo[$item]=${weapon_ammo[$item]}
@@ -539,9 +541,6 @@ function shop_ {
 		fi
 		((bLg++))
 	done
-	tput civis
-	stty -echo -icanon time 0 min 0
-	display_
 }
 function ai_ {
 	#initialize the ai, make sure it spawns at a different location
@@ -550,14 +549,16 @@ function ai_ {
 	#sleep 3
 	ai_tick=0.3
 	shots_fired=1000
-	epos=($((RANDOM%$((${surface[1]}-2))+2)) $((RANDOM%$((${surface[0]}-15))+13)))
+	epos=($((RANDOM%$((${surface[1]}-2))+2)) $(( surface[0] - ( surface[0] / 4 ) )) )
 	while [[ ${epos[0]} -ge $((${pos[0]}-2)) ]] && [[ ${epos[0]} -le $((${pos[0]}+2)) ]]; do
 			epos[0]=$((RANDOM%$((${surface[1]}-2))+2))
 	done
+
 	pos=(${epos[@]})
 	player_color=$enemy_color
 
 	while [[ -f data/ailock ]]; do
+		checkblock_
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
 			explosion_ ${pos[@]}
 			rm -rf data/ailock
@@ -633,11 +634,15 @@ function generate-map_ {
 	waterlvl=10
 	border="+-"
 	treeplace=(0 0 0)
+	echo "generating map..."
 	for ((i=1;i<$((${surface[1]}));i++)); do
+		echo -en "\rgenerating border - $(((i+1)*100/surface[1]))%"
 		border="$border""-"
 	done
+	echo ""
 	border="$border""+"
 	for ((i=0;i<${surface[0]};i++)); do
+		echo -en "\rclearing map - $(((i+1)*100/surface[0]))%"
 		for ((j=0;j<${surface[1]};j++)); do
 			eval map$i[$j]="_"
 		done
@@ -649,7 +654,9 @@ function generate-map_ {
 	elif [[ $height -ge $((${surface[0]}/4)) ]]; then
 		height=$((${surface[0]}/4))
 	fi
+	echo ""
 	for ((i=0;i<${surface[1]};i++)); do
+		echo -en "\rgenerating map - $(((i+1)*100/surface[1]))%"
 		if [[ $height -ge $waterlvl ]]; then
 			for ((j=0;j<$height;j++)); do
 				if [[ $j = $((height-1)) ]]; then
@@ -658,7 +665,6 @@ function generate-map_ {
 					eval map$j[\$i]=\"${cblock[0]}\"
 				fi
 			done
-
 			if [[ $((RANDOM%6)) = 0 ]] && [[ ${treeplace[0]} = 0 ]]; then
 				treeplace[0]=$((j+1))
 				if [[ $((RANDOM%3)) != 0 ]]; then
@@ -705,9 +711,9 @@ function generate-map_ {
 			((lhc++))
 		fi
 	done
+	echo -e "\ndone"
 	if [[ $1 != ds ]]; then
-		log_ 0 "saving map"
-		memory_ ms
+		memory_ ms mapgen
 	fi
 }
 function input_ {
@@ -809,7 +815,6 @@ function adjust_angle_ {
 	else
 		sPos=$((sPos+1))
 	fi
-	echo $sPos
 	aicon=$(echo "$sPos" | sed 's/0/→/g;s/1/↗/g;s/2/↑/g;s/3/↖/g;s/4/←/g')
 	audio_ -t fx angle
 	if [[ $orientation = 1 ]]; then
@@ -879,7 +884,6 @@ function animation_ {
 		echo -e "\033[$invy;$((${pos[0]}+4))H${rchar[1]//_/ }"
 		echo -e "\033[$invy;${pos[0]}H${rchar[0]//_/ }"
 		fbtch=($((${pos[0]}-3)) $((${pos[0]}+3)))
-		
 		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
 		local invy=$(echo $((${pos[1]}-${surface[0]})) | sed 's/-//g')
 		echo -e "\033[$invy;$((${pos[0]}+5))H${cblock[2]}"
@@ -973,20 +977,24 @@ function explosion_ {
 				memory_ sh 0 $(( $(memory_ lh 0) - $((RANDOM%5+5)) ))
 				showedexp=1
 				display_health_
-				log_ 0 "hit 0"
+				log_ 0 "explosion damaged player 0"
 			fi
 			if [[ ${posspos_1[0]} -ge $((${bup1%.*}-1)) ]] && [[ ${posspos_1[0]} -le $((${bup1%.*}+1)) ]] && [[ ${posspos_1[1]} -ge $((${bup1#*.}-1)) ]] && [[ ${posspos_1[1]} -le $((${bup1#*.})) ]]; then
 				memory_ sh 1 $(( $(memory_ lh 1) - $((RANDOM%5+5)) ))
 				display_health_
 				showedexp=1
-				log_ 0 "hit 1"
+				log_ 0 "explosion damaged player 1"
 			fi
 			if [[ $((${bup1#*.}+1)) -le $waterlvl ]]; then
 				erchar=("${cblock[2]}" "${cblock[2]}")
 			else
 				erchar=(" " "_")
 			fi
-			eval map${bup1#*.}[\${bup1%.*}]=\"${erchar[1]}\"
+			eval "rblock=\${map${bup1#*.}[${bup1%.*}]}"
+			log_ 0 "explosion rblock: $rblock"
+			if [[ -n $rblock ]]; then
+				eval map${bup1#*.}[\${bup1%.*}]=\"${erchar[1]}\"
+			fi
 			local invy=$((${bup1#*.}-${surface[0]}-1))
 			local invy=${invy//-/}
 			if [[ $showedexp = 0 ]]; then
@@ -997,7 +1005,7 @@ function explosion_ {
 			showedexp=0
 		fi
 	done
-	memory_ ms
+	memory_ ms explosion
 	if [[ -f data/explosionlock ]]; then
 		rm -rf data/explosionlock
 	fi
@@ -1161,12 +1169,12 @@ function game_over_ {
 	cleanup_
 }
 function st_cleanup_ {
-	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol
+	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard
 	tput cnorm
 }
 if [[ $1 != noini ]]; then
 	st_ini_ "$@"
 else
-	echo -e "\033[1;21H\033[05;31mreloaded-($rlc)"
+	echo -e "\033[1;21H\033[31mreloaded-($rlc)"
 	((rlc++))
 fi

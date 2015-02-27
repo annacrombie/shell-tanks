@@ -20,7 +20,7 @@ function launch_ {
 		done
 	fi
 	log_ i
-	echo -e "Loading\033[05m...\033[0m"
+	echo -e "Loading..."
 	reload_
 	log_ 0 "Initiated"
 	if [[ $logging = 1 ]]; then
@@ -173,7 +173,6 @@ function debug_ {
 }
 function cleanup_ {
 	log_ 0 "exiting"
-	set -x
 	stty $oldstty
 	st_cleanup_
 	mpkilltries=0
