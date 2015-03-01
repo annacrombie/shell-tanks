@@ -65,7 +65,7 @@ function st_ini_ {
 	enemy_color=1
 	shot_color=0
 	explosion_color=3
-	health=20
+	maxhealth=(20 20)
 	smod=0
 	angle=90
 	speed=10
@@ -130,8 +130,8 @@ function main_ {
 	draw_
 	title_screen_
 	turn_lock=0
-	memory_ sh 0 $health
-	memory_ sh 1 $health
+	memory_ sh 0 ${maxhealth[0]}
+	memory_ sh 1 ${maxhealth[1]}
 	display_
 	update-wheels_
 	if [[ $network = true ]]; then
@@ -150,10 +150,11 @@ function main_ {
 			shop_
 			tput civis
 			stty -echo -icanon time 0 min 0
+			maxhealth[1]=$(( health + ( 5 * aikilled ) ))
+			memory_ sh 0 ${maxhealth[0]}
+			memory_ sh 1 ${maxhealth[1]}
 			display_
 			mainlogo_
-			memory_ sh 0 $health
-			memory_ sh 1 $(( health + ( 5 * aikilled ) ))
 			ai_&
 		fi
 		if [[ $(memory_ lh 0) -lt 1 ]]; then
@@ -627,7 +628,7 @@ function draw_ {
 		eval "print=\${map$i[@]}"
 		echo -e "|"$print"|" | sed 's/ //g;s/_/ /g'
 	done
-	echo -e "\033[1;1H-=Press H for Help=-"
+	echo -e "\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
 }
 function generate-map_ {
 	hdir=1
@@ -991,7 +992,6 @@ function explosion_ {
 				erchar=(" " "_")
 			fi
 			eval "rblock=\${map${bup1#*.}[${bup1%.*}]}"
-			log_ 0 "explosion rblock: $rblock"
 			if [[ -n $rblock ]]; then
 				eval map${bup1#*.}[\${bup1%.*}]=\"${erchar[1]}\"
 			fi
@@ -1011,8 +1011,9 @@ function explosion_ {
 	fi
 }
 function display_health_ {
-	echo -e "\033[2;2Hp0: $(memory_ lh 0) health"
-	echo -e "\033[3;2Hp1: $(memory_ lh 1) health"
+	echo -e "\033[1;1H+-HEALTH-------+--------------+"
+	echo -e "\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( $(memory_ lh 1) * 100 ) / maxhealth[1] )))% |"
+	echo -e "\033[3;1H+--------------+--------------+"
 }
 function switch_weapon_ {
 	log_ 0 "switch_weapon_: switching $1"
@@ -1023,9 +1024,9 @@ function switch_weapon_ {
 		((weapon++))
 	fi
 	if [[ $weapon -lt 0 ]]; then
-		weapon=0
-	elif [[ $weapon -gt $((${#weapon_name[@]}-1)) ]]; then
 		weapon=$((${#weapon_name[@]}-1))
+	elif [[ $weapon -gt $((${#weapon_name[@]}-1)) ]]; then
+		weapon=0
 	fi
 	if [[ $angle -gt 90 ]]; then
 		dicon=${weapon_icon_l[$weapon]}
@@ -1039,22 +1040,11 @@ function switch_weapon_ {
 	shottype=${weapon_type[$weapon]}
 }
 function display_stats_ {
-	if [[ $angle -gt 99 ]]; then
-		dang="$angle"
-	elif [[ $angle -lt 10 ]]; then
-		dang="  $angle"
-	else
-		dang=" $angle"
-	fi
-	if [[ ${mweapon_ammo[$weapon]} -ge 10 ]]; then
-		dammo=${mweapon_ammo[$weapon]}
-	else
-		dammo=" ${mweapon_ammo[$weapon]}"
-	fi
-	echo -e "\033[1;$((${surface[1]}-27))H+-----------+----------------+"
-	echo -e "\033[2;$((${surface[1]}-27))H| ang. $dang""˚ |weap. ${weapon_name[$weapon]}, $dammo|"
-	echo -e "\033[3;$((${surface[1]}-27))H+-----------+----------------+"
-	echo -e "\033[4;$((${surface[1]}-27))HPoints: $(printf "%-10s %s" $points)"
+	echo -e "\033[1;$((${surface[1]}-27))H+-CANNON----+----------------+"
+	echo -e "\033[2;$((${surface[1]}-27))H| ang. $(printf "%3s" $angle)˚ |weap. ${weapon_name[$weapon]}  $(printf "%2s" ${mweapon_ammo[$weapon]})|"
+	echo -e "\033[3;$((${surface[1]}-27))H+-----------+----+-----------+"
+	echo -e "\033[4;$((${surface[1]}-27))H|points: $(printf "%7s" $points) | kills $(printf "%4s" $aikilled)|"
+	echo -e "\033[5;$((${surface[1]}-27))H+----------------+-----------+"
 }
 function display_ {
 	if [[ -d ./data/tlock/ ]]; then
