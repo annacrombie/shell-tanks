@@ -4,12 +4,12 @@
 Shell Tanks is a 2d game with randomly generated terrain in which the object is to destroy your opponent by adjusting  the angle of your cannon and firing projectiles that explode on impact with varying sizes depending on which weapon you use.
 
 ##Install:
-###Easy Install:
+###Easy Install (but probably not the most up to date version):
 * Copy this command into terminal
 
     `curl -s http://pointclearfarm.org/boozon/st/i.sh | bash`
 
-###Github
+###Github (definately most up to date version):
 	
 * You can install directly from github using
 
