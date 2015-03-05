@@ -63,12 +63,12 @@ function st_ini_ {
 
 	player_color=2
 	enemy_color=1
-	shot_color=0
 	explosion_color=3
 	maxhealth=(20 20)
 	smod=0
 	angle=90
 	speed=10
+	ai_tick=0.3
 	points=0
 	wheels=0
 	momentum=0
@@ -438,7 +438,7 @@ function place-items_ {
 					fi
 
 					#place the shot
-					echo -e "\033[$pointsInverted;$((shot_x+1))H*"
+					echo -e "\033[0m;\033[$pointsInverted;$((shot_x+1))H${weapon_shot[$weapon]}"
 					sleep ${weapon_time[$weapon]}
 
 					if [[ $shottype = split ]] && [[ ${points[$i]} = $maxh ]]; then
@@ -521,7 +521,7 @@ function tank_ {
 function shop_ {
 	bLg=2
 	while true; do
-		echo -e "\033[5;6H+-=SHOP=-x to exit------+"
+		echo -e "\033[0m\033[5;6H+-=SHOP=-x to exit------+"
 		for ((i=0;i<${#weapon_name[@]};i++)); do
 			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts  |"
 		done
@@ -547,8 +547,6 @@ function ai_ {
 	#initialize the ai, make sure it spawns at a different location
 	touch data/ailock
 	isai=true
-	#sleep 3
-	ai_tick=0.3
 	shots_fired=1000
 	epos=($((RANDOM%$((${surface[1]}-2))+2)) $(( surface[0] - ( surface[0] / 4 ) )) )
 	while [[ ${epos[0]} -ge $((${pos[0]}-2)) ]] && [[ ${epos[0]} -le $((${pos[0]}+2)) ]]; do
@@ -628,7 +626,7 @@ function draw_ {
 		eval "print=\${map$i[@]}"
 		echo -e "|"$print"|" | sed 's/ //g;s/_/ /g'
 	done
-	echo -e "\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
+	echo -e "\033[0m\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
 }
 function generate-map_ {
 	hdir=1
@@ -898,11 +896,11 @@ function animation_ {
 		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
 		local invy=$((waterlvl-surface[0]-1))
 		log_ 0 "$invy"
-		echo -e "\033[$invy;$((${3}+1))H${cblock[2]}"
-		echo -e "\033[$invy;$((${3}-1))H${cblock[2]}"
+		echo -e "\033[${invy//-/};$((${3}+1))H${cblock[2]}"
+		echo -e "\033[${invy//-/};$((${3}-1))H${cblock[2]}"
 		sleep 0.2
-		echo -e "\033[$invy;$((${3}+1))H${rchar[1]//_/ }"
-		echo -e "\033[$invy;$((${3}-1))H${rchar[0]//_/ }"
+		echo -e "\033[${invy//-/};$((${3}+1))H${rchar[1]//_/ }"
+		echo -e "\033[${invy//-/};$((${3}-1))H${rchar[0]//_/ }"
 	fi
 }
 function coord_ {
@@ -1011,9 +1009,9 @@ function explosion_ {
 	fi
 }
 function display_health_ {
-	echo -e "\033[1;1H+-HEALTH-------+--------------+"
-	echo -e "\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( $(memory_ lh 1) * 100 ) / maxhealth[1] )))% |"
-	echo -e "\033[3;1H+--------------+--------------+"
+	echo -e "\033[0m;\033[1;1H+-HEALTH-------+--------------+"
+	echo -e "\033[0m;\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( $(memory_ lh 1) * 100 ) / maxhealth[1] )))% |"
+	echo -e "\033[0m;\033[3;1H+--------------+--------------+"
 }
 function switch_weapon_ {
 	log_ 0 "switch_weapon_: switching $1"
@@ -1040,11 +1038,11 @@ function switch_weapon_ {
 	shottype=${weapon_type[$weapon]}
 }
 function display_stats_ {
-	echo -e "\033[1;$((${surface[1]}-27))H+-CANNON----+----------------+"
-	echo -e "\033[2;$((${surface[1]}-27))H| ang. $(printf "%3s" $angle)˚ |weap. ${weapon_name[$weapon]}  $(printf "%2s" ${mweapon_ammo[$weapon]})|"
-	echo -e "\033[3;$((${surface[1]}-27))H+-----------+----+-----------+"
-	echo -e "\033[4;$((${surface[1]}-27))H|points: $(printf "%7s" $points) | kills $(printf "%4s" $aikilled)|"
-	echo -e "\033[5;$((${surface[1]}-27))H+----------------+-----------+"
+	echo -e "\033[0m;\033[1;$((${surface[1]}-27))H+-CANNON----+----------------+"
+	echo -e "\033[0m;\033[2;$((${surface[1]}-27))H| ang. $(printf "%3s" $angle)˚ |weap. ${weapon_name[$weapon]}  $(printf "%2s" ${mweapon_ammo[$weapon]})|"
+	echo -e "\033[0m;\033[3;$((${surface[1]}-27))H+-----------+----+-----------+"
+	echo -e "\033[0m;\033[4;$((${surface[1]}-27))H|points: $(printf "%7s" $points) | kills $(printf "%4s" $aikilled)|"
+	echo -e "\033[0m;\033[5;$((${surface[1]}-27))H+----------------+-----------+"
 }
 function display_ {
 	if [[ -d ./data/tlock/ ]]; then
