@@ -882,6 +882,7 @@ function animation_ {
 		echo -e "\033[$invy;$((${pos[0]}+4))H${rchar[1]//_/ }"
 		echo -e "\033[$invy;${pos[0]}H${rchar[0]//_/ }"
 	elif [[ $1 = splash ]]; then
+		audio_ -t fx splash/$((RANDOM%2))
 		fbtch=($((${pos[0]}-2)) $((${pos[0]}+2)))
 		rchary=$((${pos[1]}+1))
 		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
@@ -900,6 +901,7 @@ function animation_ {
 		echo -e "\033[$invy;$((${pos[0]}+5))H${rchar[1]//_/ }"
 		echo -e "\033[$invy;$((${pos[0]}-1))H${rchar[0]//_/ }"
 	elif [[ $1 = smallsplash ]]; then
+		audio_ -t fx splash/2
 		fbtch=($3 $3)
 		rchary=$waterlvl
 		eval "rchar=(\${map$rchary[${fbtch[0]}]} \${map$rchary[${fbtch[1]}]})"
@@ -1105,6 +1107,8 @@ function burn_ {
 		echo -e "\033[${invy/-/};$(($2+2))H "
 	elif [[ $1 = wait ]]; then
 		touch data/lit/waiting
+		mplayer -loop 0 audio/fx/burn.ogg 2>/dev/null >/dev/null&
+		mplayerpid=$!
 		litcount=0
 		while true; do
 			oldlitcount=$litcount
@@ -1123,6 +1127,7 @@ function burn_ {
 		done
 		memory_ ms
 		rm data/lit/*
+		kill $!
 	fi
 }
 function display_ {
