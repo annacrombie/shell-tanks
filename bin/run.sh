@@ -7,14 +7,6 @@ function launch_ {
 	ini_
 	if [[ -n "$@" ]]; then
 		while [[ -n "$@" ]]; do
-			if [[ -z $(echo "$1" | sed 's/[-,a-z]//g') ]] && [[ $(echo $1 | wc -c | awk '{print $1}') -ge 3 ]]; then
-				sargs=($(echo $1 | sed 's/-//g;s/./-& /g'))
-				for ((i=0;i<${#sargs[@]};i++)); do
-					arg_ ${sargs[$i]}
-				done
-				shift
-				continue
-			fi
 			arg_ "$@"
 			shift $?
 		done
@@ -74,6 +66,15 @@ function arg_ {
 	elif [[ "$1" = "-m" ]]; then
 		sound=0
 		shiftam=1
+	elif [[ "$1" = "-waterlvl" ]]; then
+		waterlvl=$2
+		shiftam=2
+	elif [[ "$1" = "-treechance" ]]; then
+		treechance=$2
+		shiftam=2
+	elif [[ "$1" = "-noai" ]]; then
+		noai=true
+		shiftam=1
 	elif [[ "$1" = "-h" ]]; then
 		help_
 	else
@@ -92,11 +93,15 @@ function help_ {
 	echo "usage: run.sh"
 	echo " -h: help"
 	echo " -l: log to file"
+	echo " -lf: specify log file"
 	echo " -v: log to stty, turned on by -i"
 	echo " -r: remove data folder on launch (if shell-tanks did not cleanup)"
 	echo " -d: developer mode, enables a few top secret cheats"
 	echo " -i: interactive mode, turns on logging to stty by default"
 	echo " -m: mute all audio"
+	echo " -waterlvl <lvl>: set water level"
+	echo " -treechance <chance>: set tree density, lower number = higher density"
+	echo " -noai: in human vs computer, disables ai"
 	echo " -n <client id> <peer ip>: turns on network mode, client id"
 	echo "     must be a 1 or 0.  Client 0 will generate the map, and"
 	echo "     client 1 will listen for a finished map, so client 1  "
@@ -116,6 +121,7 @@ function ini_ {
 	mkdir -p data
 	sound=1
 	logging=2
+	noai=false
 	network=false
 }
 function import_ {
@@ -160,15 +166,6 @@ function log_ {
 			shift
 			echo "[$SECONDS][severe] $@" >> $lf
 		fi
-	fi
-}
-function debug_ {
-	if [[ messy_debug = 1 ]]; then
-		set +x
-		messy_debug=0
-	elif [[ $messy_debug = 0 ]]; then
-		set -x
-		messy_debug=1
 	fi
 }
 function cleanup_ {

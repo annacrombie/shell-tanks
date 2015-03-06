@@ -3,10 +3,11 @@ function audio_ {
 		return 2
 	fi
 	audio_dir=$(pwd)
-	if [[ $(which mplayer) ]]; then
-		afbin=mplayer
-	else
-		afbin=$audio_dir/audio/mplayer
+	afbin=mplayer
+	if [[ -z $(which mplayer) ]]; then
+		sound=0
+		log_ 1 "[audio] mplayer not installed, disabling audio"
+		return 2
 	fi
 	loopAudio=1
 	stopAudio=0
@@ -41,7 +42,6 @@ function audio_ {
 			fi
 			$afbin -loop $lAudio $audio_dir/audio/$audioType/${audioFiles[$i]}.ogg >/dev/null 2>/dev/null
 		done&
-		return 1
 	else
 		return 0
 	fi

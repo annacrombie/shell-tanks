@@ -138,7 +138,9 @@ function main_ {
 	if [[ $network = true ]]; then
 		netclient_&
 	else
-		ai_&
+		if [[ $noai = false ]]; then
+			ai_&
+		fi
 	fi
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
@@ -154,6 +156,7 @@ function main_ {
 			maxhealth[1]=$(( health + ( 5 * aikilled ) ))
 			memory_ sh 0 ${maxhealth[0]}
 			memory_ sh 1 ${maxhealth[1]}
+			memory_ ml
 			display_
 			mainlogo_
 			ai_&
@@ -630,8 +633,13 @@ function draw_ {
 	echo -e "\033[0m\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
 }
 function generate-map_ {
+	if [[ -z $treechance ]]; then
+		treechance=5
+	fi
+	if [[ -z $waterlvl ]]; then
+		waterlvl=10
+	fi
 	hdir=1
-	waterlvl=10
 	border="+-"
 	treeplace=(0 0 0)
 	echo "generating map..."
@@ -665,7 +673,7 @@ function generate-map_ {
 					eval map$j[\$i]=\"${cblock[0]}\"
 				fi
 			done
-			if [[ $((RANDOM%5)) = 0 ]] && [[ ${treeplace[0]} = 0 ]]; then
+			if [[ $((RANDOM%$treechance)) = 0 ]] && [[ ${treeplace[0]} = 0 ]]; then
 				treeplace[0]=$((j+1))
 				if [[ $((RANDOM%3)) != 0 ]]; then
 					eval map$((j+1))[\$i]=\"${cblock[4]}\"
@@ -767,9 +775,7 @@ function input_ {
 			if [[ $key = l ]]; then
 				display_
 			elif [[ $key = c ]]; then
-				if [[ -f data/tlock ]]; then
-					rm data/tlock
-				fi
+				rm -rf data/tlock/*
 				tput cnorm
 				echo -en "\033[2;2H"
 				interactive_
@@ -1001,7 +1007,7 @@ function explosion_ {
 				erchar=(" " "_")
 			fi
 			eval "rblock=\${map${bup1#*.}[${bup1%.*}]}"
-			if [[ "$rblock" = "${cblock[3]}" ]] || [[ "$rblock" = "${cblock[4]}" ]] || [[ "$rblock" = "${cblock[5]}" ]]; then
+			if [[ "$rblock" = "${cblock[3]}" ]] || [[ "$rblock" = "${cblock[4]}" ]] || [[ "$rblock" = "${cblock[5]}" ]] || [[ "$rblock" = "${cblock[1]}" ]]; then
 				burn_ spread ${bup1%.*} ${bup1#*.}&
 			fi
 			if [[ -n $rblock ]]; then
@@ -1108,7 +1114,6 @@ function burn_ {
 	elif [[ $1 = wait ]]; then
 		touch data/lit/waiting
 		mplayer -loop 0 audio/fx/burn.ogg 2>/dev/null >/dev/null&
-		mplayerpid=$!
 		litcount=0
 		while true; do
 			oldlitcount=$litcount
