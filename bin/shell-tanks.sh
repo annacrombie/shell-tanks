@@ -9,6 +9,7 @@ function st_ini_ {
 	shots_fired=0
 	last_shot=$SECONDS
 	mkdir -p data/shot
+	mkdir -p data/lit
 	weapexplode=true
 
 	langset_
@@ -438,7 +439,7 @@ function place-items_ {
 					fi
 
 					#place the shot
-					echo -e "\033[0m;\033[$pointsInverted;$((shot_x+1))H${weapon_shot[$weapon]}"
+					echo -e "\033[0m\033[$pointsInverted;$((shot_x+1))H${weapon_shot[$weapon]}"
 					sleep ${weapon_time[$weapon]}
 
 					if [[ $shottype = split ]] && [[ ${points[$i]} = $maxh ]]; then
@@ -664,7 +665,7 @@ function generate-map_ {
 					eval map$j[\$i]=\"${cblock[0]}\"
 				fi
 			done
-			if [[ $((RANDOM%6)) = 0 ]] && [[ ${treeplace[0]} = 0 ]]; then
+			if [[ $((RANDOM%5)) = 0 ]] && [[ ${treeplace[0]} = 0 ]]; then
 				treeplace[0]=$((j+1))
 				if [[ $((RANDOM%3)) != 0 ]]; then
 					eval map$((j+1))[\$i]=\"${cblock[4]}\"
@@ -786,6 +787,8 @@ function input_ {
 				for ((i=0;i<${#mweapon_ammo[@]};i++)); do
 					mweapon_ammo[$i]=99
 				done
+			elif [[ $key = b ]]; then
+				burn_ spread ${pos[@]}&
 			elif [[ $key = r ]]; then
 				reload_ noini
 			fi
@@ -794,20 +797,26 @@ function input_ {
 }
 function adjust_angle_ {
 	oldangle=$angle
-	ipos=(${pos[0]} $( echo $((${pos[1]}-${surface[0]})) | sed 's/-//g'))
+	ipos=(${pos[0]} $(echo $((${pos[1]}-${surface[0]})) | sed 's/-//g'))
 	#←↖↑↗→
 	if [[ $1 = "0" ]]; then
-		angle=$((angle-5))
+		if [[ $angle = 90 ]]; then
+			angle=45
+		else
+			angle=$((angle-5))
+		fi
 	elif [[ $1 = "1" ]]; then
-		angle=$((angle+5))
+		if [[ $angle = 90 ]]; then
+			angle=135
+		else
+			angle=$((angle+5))
+		fi
 	fi
 	if [[ $angle -gt 180 ]]; then
 		angle=$oldangle
 	elif [[ $angle -lt 0 ]]; then
 		angle=$oldangle
 	fi
-	#straight from shanks 1!
-	sPos=($(awk "BEGIN {print $angle / 50}" | sed 's/[.]/ /g'))
 	sPos=$((angle/50))
 	if [[ $angle -le 30 ]]; then
 		sPos=0
@@ -990,6 +999,9 @@ function explosion_ {
 				erchar=(" " "_")
 			fi
 			eval "rblock=\${map${bup1#*.}[${bup1%.*}]}"
+			if [[ "$rblock" = "${cblock[3]}" ]] || [[ "$rblock" = "${cblock[4]}" ]] || [[ "$rblock" = "${cblock[5]}" ]]; then
+				burn_ spread ${bup1%.*} ${bup1#*.}&
+			fi
 			if [[ -n $rblock ]]; then
 				eval map${bup1#*.}[\${bup1%.*}]=\"${erchar[1]}\"
 			fi
@@ -1009,9 +1021,9 @@ function explosion_ {
 	fi
 }
 function display_health_ {
-	echo -e "\033[0m;\033[1;1H+-HEALTH-------+--------------+"
-	echo -e "\033[0m;\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( $(memory_ lh 1) * 100 ) / maxhealth[1] )))% |"
-	echo -e "\033[0m;\033[3;1H+--------------+--------------+"
+	echo -e "\033[0m\033[1;1H+-HEALTH-------+--------------+"
+	echo -e "\033[0m\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( $(memory_ lh 1) * 100 ) / maxhealth[1] )))% |"
+	echo -e "\033[0m\033[3;1H+--------------+--------------+"
 }
 function switch_weapon_ {
 	log_ 0 "switch_weapon_: switching $1"
@@ -1038,11 +1050,80 @@ function switch_weapon_ {
 	shottype=${weapon_type[$weapon]}
 }
 function display_stats_ {
-	echo -e "\033[0m;\033[1;$((${surface[1]}-27))H+-CANNON----+----------------+"
-	echo -e "\033[0m;\033[2;$((${surface[1]}-27))H| ang. $(printf "%3s" $angle)˚ |weap. ${weapon_name[$weapon]}  $(printf "%2s" ${mweapon_ammo[$weapon]})|"
-	echo -e "\033[0m;\033[3;$((${surface[1]}-27))H+-----------+----+-----------+"
-	echo -e "\033[0m;\033[4;$((${surface[1]}-27))H|points: $(printf "%7s" $points) | kills $(printf "%4s" $aikilled)|"
-	echo -e "\033[0m;\033[5;$((${surface[1]}-27))H+----------------+-----------+"
+	echo -e "\033[0m\033[1;$((${surface[1]}-27))H+-CANNON----+----------------+"
+	echo -e "\033[0m\033[2;$((${surface[1]}-27))H| ang. $(printf "%3s" $angle)˚ |weap. ${weapon_name[$weapon]}  $(printf "%2s" ${mweapon_ammo[$weapon]})|"
+	echo -e "\033[0m\033[3;$((${surface[1]}-27))H+-----------+----+-----------+"
+	echo -e "\033[0m\033[4;$((${surface[1]}-27))H|points: $(printf "%7s" $points) | kills $(printf "%4s" $aikilled)|"
+	echo -e "\033[0m\033[5;$((${surface[1]}-27))H+----------------+-----------+"
+}
+function burn_ {
+	if [[ $1 = spread ]]; then
+		if [[ ! -f data/lit/waiting ]]; then
+			burn_ wait&
+		fi
+		center=($2 $3)
+		touch data/lit/${2}_${3}
+		burn_ light ${center[@]}&
+		scx=($((center[0]-1)) ${center[0]} $((center[0]+1)))
+		scy=($((center[1]+1)) ${center[1]} $((center[1]-1)))
+		eval "sb=(\${map${scy[0]}[${scx[0]}]} \${map${scy[0]}[${scx[1]}]} \${map${scy[0]}[${scx[2]}]}
+				  \${map${scy[1]}[${scx[0]}]} \${map${scy[1]}[${scx[1]}]} \${map${scy[1]}[${scx[1]}]}
+				  \${map${scy[2]}[${scx[0]}]} \${map${scy[2]}[${scx[2]}]} \${map${scy[2]}[${scx[2]}]})"
+			  sc=( ${scx[0]}_${scy[0]}         ${scx[1]}_${scy[0]}         ${scx[2]}_${scy[0]}
+			  	   ${scx[0]}_${scy[1]}         ${scx[1]}_${scy[1]}         ${scx[1]}_${scy[1]}
+			  	   ${scx[0]}_${scy[2]}         ${scx[2]}_${scy[2]}         ${scx[2]}_${scy[2]})
+		for ((i=0;i<${#sb[@]};i++)); do
+			if [[ -f data/lit/${sc[$i]} ]]; then
+				continue
+			fi
+			if [[ "${sb[$i]}" = "${cblock[3]}" ]] || [[ "${sb[$i]}" = "${cblock[4]}" ]] || [[ "${sb[$i]}" = "${cblock[5]}" ]]; then
+				sleep 0.4&&burn_ spread ${sc[$i]/_/ }&
+			fi
+		done
+	elif [[ $1 = light ]]; then
+		local invy=$(($3-${surface[0]}-1))
+		for ((i=0;i<3;i++)); do
+			posspos_0=($(memory_ pl 0))
+			posspos_1=($(memory_ pl 1))
+			if [[ ${posspos_0[0]} -ge $(($2-1)) ]] && [[ ${posspos_0[0]} -le $(($2+1)) ]] && [[ ${posspos_0[1]} -ge $(($3-1)) ]] && [[ ${posspos_0[1]} -le $(($3)) ]]; then
+				memory_ sh 0 $(( $(memory_ lh 0) - 1 ))
+				showedexp=1
+				display_health_
+				log_ 0 "fire damaged player 0"
+			fi
+			if [[ ${posspos_1[0]} -ge $(($2-1)) ]] && [[ ${posspos_1[0]} -le $(($2+1)) ]] && [[ ${posspos_1[1]} -ge $(($3-1)) ]] && [[ ${posspos_1[1]} -le $(($3)) ]]; then
+				memory_ sh 1 $(( $(memory_ lh 1) - 1 ))
+				display_health_
+				showedexp=1
+				log_ 0 "fire damaged player 1"
+			fi
+			echo -e "\033[${invy/-/};$(($2+2))H${c_red}*"
+			sleep 0.2
+			echo -e "\033[${invy/-/};$(($2+2))H${c_yellow}*"
+			sleep 0.2
+		done
+		echo -e "\033[${invy/-/};$(($2+2))H "
+	elif [[ $1 = wait ]]; then
+		touch data/lit/waiting
+		litcount=0
+		while true; do
+			oldlitcount=$litcount
+			sleep 0.5
+			litcount=$(ls -l data/lit | wc -l)
+			if [[ $oldlitcount = $litcount ]]; then
+				break
+			fi
+		done
+		memory_ ml
+		for i in $(ls data/lit/); do
+			if [[ $i != waiting ]]; then
+				ds=(${i/_/ })
+				eval map${ds[1]}[\${ds[0]}]=\"_\"
+			fi
+		done
+		memory_ ms
+		rm data/lit/*
+	fi
 }
 function display_ {
 	if [[ -d ./data/tlock/ ]]; then
@@ -1157,7 +1238,7 @@ function game_over_ {
 	cleanup_
 }
 function st_cleanup_ {
-	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard
+	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard ./data/lit
 	tput cnorm
 }
 if [[ $1 != noini ]]; then
