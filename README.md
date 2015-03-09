@@ -11,7 +11,7 @@ Shell Tanks is a 2d game with randomly generated terrain in which the object is 
 
     `curl -s http://pointclearfarm.org/boozon/st/i.sh | bash`
 
-###Github (definately most up to date version):
+###Github (definitely most up to date version):
 	
 * You can install directly from github using
 
