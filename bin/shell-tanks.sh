@@ -68,7 +68,7 @@ function st_ini_ {
 	maxhealth=(20 20)
 	smod=0
 	angle=90
-	speed=10
+	speed=0.1
 	ai_tick=0.3
 	points=0
 	wheels=0
@@ -96,11 +96,6 @@ function st_ini_ {
 	stty -echo -icanon time 0 min 0
 	tput civis
 	echo -n -e "\033]0;shell-tanks build $(cat ../ver.txt)\007"
-
-	audio_ -t theme -l maintheme
-	#rm -rf data/mcontrol
-	#mkfifo data/mcontrol
-	#mplayer -slave -quiet audio/theme/maintheme.ogg -input file=data/mcontrol 2>&1 >/dev/null&
 }
 function load_graphics_ {
 	. ./graphic/terrain/$terrain_graphics
@@ -129,6 +124,9 @@ function langset_ {
 function main_ {
 	load_graphics_
 	draw_
+	if [[ $rlc = 0 ]]; then
+		audio_ -t theme -l theme
+	fi
 	title_screen_
 	turn_lock=0
 	memory_ sh 0 ${maxhealth[0]}
@@ -172,7 +170,7 @@ function main_ {
 			place-items_
 		fi
 		plit=true
-		sleep 0.$((speed-smod))
+		sleep $(echo "$speed - $smod" | bc -l)
 		checkblock_
 		input_
 		if [[ $network = true ]]; then
@@ -325,7 +323,7 @@ function title_screen_ {
 				help_
 			fi
 		else
-			audio_ -t fx hit/$((RANDOM%2))
+			audio_ -t fx hit/$((RANDOM%6))
 			if [[ $sel = 0 ]]; then
 				intitlescreen=false
 				break
@@ -965,7 +963,7 @@ function explosion_ {
 		bup=(${sbup[@]})
 	fi
 	if [[ $weapon != 2 ]]; then
-		audio_ -t fx hit/$((RANDOM%2))
+		audio_ -t fx hit/$((RANDOM%6))
 	else
 		audio_ -t fx hit/hard
 	fi
@@ -1245,7 +1243,11 @@ function game_over_ {
 	read -s -n 1
 	rm -rf ./data/ailock
 	sleep 2
-	cleanup_
+	st_cleanup_
+	tput civis
+	st_ini_ $LINES $COLS
+	((rlc++))
+	main_
 }
 function st_cleanup_ {
 	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard ./data/lit
