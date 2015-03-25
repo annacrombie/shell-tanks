@@ -623,7 +623,7 @@ function ai_ {
 	done
 }
 function draw_ {
-	echo "$border"
+	echo -e "\033[0;0H$border"
 	for ((i=$((${surface[0]}-1));i>-1;i--)); do
 		eval "print=\${map$i[@]}"
 		echo -e "|"$print"|" | sed 's/ //g;s/_/ /g'
