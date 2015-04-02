@@ -734,7 +734,7 @@ function draw_ {
 	echo -e "\033[0m\033[0;0H$border"
 	for ((i=$((${surface[0]}-1));i>-1;i--)); do
 		eval "print=\${map$i[@]}"
-		echo -e "\033[0m|"$print"|" | sed 's/ //g;s/_/ /g'
+		echo -e "\033[0m|"$print"\033[0m|" | sed 's/ //g;s/_/ /g'
 	done
 	echo -e "\033[0m\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
 }
