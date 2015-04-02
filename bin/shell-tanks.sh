@@ -886,8 +886,8 @@ function input_ {
 			rm -rf ./data/ailock
 			st_cleanup_
 			tput civis
-			st_ini_ $LINES $COLS
 			((rlc++))
+			st_ini_ $LINES $COLS
 			main_
 		fi
 		if [[ $developer = 1 ]]; then
