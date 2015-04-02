@@ -28,6 +28,7 @@ function launch_ {
 }
 function arg_ {
 	shiftam=0
+	loadsettings=0
 	if [[ "$1" = "-i" ]]; then
 		mode=1
 		logging=1
@@ -65,6 +66,9 @@ function arg_ {
 		shiftam=1
 	elif [[ "$1" = "-m" ]]; then
 		sound=0
+		shiftam=1
+	elif [[ "$1" = "-fx" ]]; then
+		sound=1
 		shiftam=1
 	elif [[ "$1" = "-waterlvl" ]]; then
 		waterlvl=$2
@@ -113,14 +117,16 @@ function help_ {
 	exit
 }
 function ini_ {
+	rlc=0
 	dlf="./shell-tanks.log"
 	oldstty=$(stty -g)
 	developer=0
 	mode=0
 	dir=$(dirname $0)
 	mkdir -p data
-	sound=1
+	sound=2
 	logging=2
+	loadsettings=1
 	noai=false
 	network=false
 }
@@ -181,7 +187,7 @@ function cleanup_ {
 			((mpkilltries++))
 		fi
 	done
-	echo -en "\033]0;\007\033[0m"
+	echo -en "\033]0;\007\033[0m\033[${LINES};0H"
 	exit
 }
 function interactive_ {

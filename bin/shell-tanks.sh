@@ -5,7 +5,6 @@ function st_ini_ {
 	oldpos=(${pos[@]})
 	moldpos=(${pos[@]})
 	oldorientation=0
-	rlc=0
 	shots_fired=0
 	last_shot=$SECONDS
 	mkdir -p data/shot
@@ -13,6 +12,10 @@ function st_ini_ {
 	weapexplode=true
 
 	langset_
+
+	if [[ $loadsettings = 1 ]]; then
+		settings_ load
+	fi
 
 	#colors
 	c_no="\033[0m"
@@ -59,7 +62,11 @@ function st_ini_ {
 			memory_ ml
 		fi
 	else
-		generate-map_
+		if [[ $rlc -gt 0 ]]; then
+			generate-map_ -s
+		else
+			generate-map_
+		fi
 	fi
 
 	player_color=2
@@ -90,8 +97,9 @@ function st_ini_ {
 		"Ww" # switch weapon
 		"Ss" # switch weapon
 		"Hh" # help
+		"Mm" # menu
 	)
-	control_desc=("move_left" "move_right" "fire" "adjust_angle_right" "adjust_angle_left" "switch_weapon" "switch_weapon" "help")
+	control_desc=("move_left" "move_right" "fire" "adjust_angle_right" "adjust_angle_left" "switch_weapon" "switch_weapon" "help" "main_menu")
 
 	stty -echo -icanon time 0 min 0
 	tput civis
@@ -124,7 +132,7 @@ function langset_ {
 function main_ {
 	load_graphics_
 	draw_
-	if [[ $rlc = 0 ]]; then
+	if [[ $rlc = 0 ]] && [[ $sound -gt 1 ]]; then
 		audio_ -t theme -l theme
 	fi
 	title_screen_
@@ -221,6 +229,8 @@ function logos_ {
 			echo -e "\033[${hy[0]};${hcenter}H       LOCAL      "
 		elif [[ $1 = "network" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H      NETWORK     "
+		elif [[ $1 = "play" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H       PLAY       "
 		elif [[ $1 = "exit" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H       EXIT       "
 		fi
@@ -249,9 +259,13 @@ function logos_ {
 		elif [[ $1 = "network" ]]; then
 			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                         ##  ## ###### ###### ##    ##  ####  ####  ## ##                                         \033[${hy[1]};${hcenter}H                                    ---+ ### ## ##       ##   ##    ## ##  ## ## ## ## ## +---                                    \033[${hy[2]};${hcenter}H                                  << A | ###### ######   ##   ## ## ## ##  ## ####  ####  | D >>                                  \033[${hy[3]};${hcenter}H                                    ---+ ## ### ##       ##   ###  ### ##  ## ## ## ## ## +---                                    \033[${hy[4]};${hcenter}H                                         ##  ## ######   ##   ##    ##  ####  ## ## ## ##                                         "
 		elif [[ $1 = "exit" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                   ###### ##  ## ###### ######                                                    \033[${hy[1]};${hcenter}H                                              ---+ ##      ####    ##     ##   +---                                               \033[${hy[2]};${hcenter}H                                            << A | ######   ##     ##     ##   | D >>                                             \033[${hy[3]};${hcenter}H                                              ---+ ##      ####    ##     ##   +---                                               \033[${hy[4]};${hcenter}H                                                   ###### ##  ## ######   ##                                                      "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                    ##### ##  ## ###### ######                                                    \033[${hy[1]};${hcenter}H                                               ---+ ##     ####    ##     ##   +---                                               \033[${hy[2]};${hcenter}H                                             << A | #####   ##     ##     ##   | D >>                                             \033[${hy[3]};${hcenter}H                                               ---+ ##     ####    ##     ##   +---                                               \033[${hy[4]};${hcenter}H                                                    ##### ##  ## ######   ##                                                      "
+		elif [[ $1 = "play" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                    ####  ##       ##   ##  ##                                                    \033[${hy[1]};${hcenter}H                                               ---+ ## ## ##     ###### ###### +---                                               \033[${hy[2]};${hcenter}H                                             << A | ####  ##     ##  ##   ##   | D >>                                             \033[${hy[3]};${hcenter}H                                               ---+ ##    ##     ######   ##   +---                                               \033[${hy[4]};${hcenter}H                                                    ##    ###### ##  ##   ##                                                      "
 		elif [[ $1 = "settings" ]]; then
 			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                      ####  ###### ###### ###### ###### ##  ##  #####   ####                                      \033[${hy[1]};${hcenter}H                                ---+ ##     ##       ##     ##     ##   ### ## ##      ##     +---                                \033[${hy[2]};${hcenter}H                              << A |  ####  ######   ##     ##     ##   ###### ##  ###  ####  | D >>                              \033[${hy[3]};${hcenter}H                                ---+     ## ##       ##     ##     ##   ## ### ##   ##     ## +---                                \033[${hy[4]};${hcenter}H                                      ####  ######   ##     ##   ###### ##  ##  #####   ####                                      "
+		elif [[ $1 = "clear" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H                                                                                                                                  \033[${hy[1]};${hcenter}H                                                                                                                              \033[${hy[2]};${hcenter}H                                                                                                                                  \033[${hy[3]};${hcenter}H                                                                                                                              \033[${hy[4]};${hcenter}H                                                                                                                                  "
 		elif [[ $1 = "sun" ]]; then
 			center=$(( ( ${surface[1]} - 27 ) / 2 ))
 			sun_height=(0 0 3 4 5 6 7 8 9 10 11 12 13 14 15)
@@ -308,7 +322,7 @@ function title_screen_ {
 	else
 		logosize=small
 	fi
-	selection=("humanvcomputer" "exit")
+	selection=("play" "settings" "exit")
 	sel=0
 	mainlogo_
 	while true; do
@@ -316,9 +330,9 @@ function title_screen_ {
 		read -s -n 1 key
 		if [[ -n $key ]]; then
 			if [[ $key = [${controls[0]}] ]]; then
-				sel=0
+				((sel--))
 			elif [[ $key = [${controls[1]}] ]]; then
-				sel=1
+				((sel++))
 			elif [[ $key = h ]] || [[ $key = H ]]; then
 				help_
 			fi
@@ -328,9 +342,18 @@ function title_screen_ {
 				intitlescreen=false
 				break
 			elif [[ $sel = 1 ]]; then
+				logos_ clear
+				settings_ menu
+			elif [[ $sel = 2 ]]; then
 				cleanup_
 			fi
 		fi
+		if [[ $sel -ge ${#selection[@]} ]]; then
+				sel=0
+
+			elif [[ $sel -lt 0 ]]; then
+				sel=$((${#selection[@]}-1))
+			fi
 	done
 	echo -en "\033[0m"
 }
@@ -533,7 +556,7 @@ function shop_ {
 			break
 		elif [[ -n $item ]] && [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
 			if [[ $points -ge ${weapon_cost[$item]} ]]; then
-				points=$((points-${weapon_cost[$item]}))
+				points=$((points-weapon_cost[$item]))
 				mweapon_ammo[$item]=${weapon_ammo[$item]}
 				echo -e "\033[$((6+i+bLg));6Hbought ${weapon_name[$item]} ammo"
 			else
@@ -544,6 +567,91 @@ function shop_ {
 		fi
 		((bLg++))
 	done
+}
+function settings_ {
+	if [[ $1 = load ]]; then
+		if [[ ! -f ./settings ]]; then
+			settings_ save
+		else
+			. ./settings
+		fi
+	elif [[ $1 = save ]]; then
+		echo 'sound="'$sound'" developer="'$developer'"' > ./settings
+	elif [[ $1 = menu ]]; then
+		hy=(25 26 27 28)
+		settings_items=("      audio      " " developer mode " " done ")
+		settings_items_sel=("      >audio<      " ">developer mode<" ">done<")
+		settings_options=('"1none2" "1fx2" "1all2"' '"___1off2___" "___1on2___"')
+		settings_selected=($sound $developer)
+		settings_item_on=0
+		while true; do
+			for ((i=0;i<${#settings_items[@]};i++)); do
+				if [[ $i = $settings_item_on ]]; then
+					settingtoprint=${settings_items_sel[$i]}
+				else
+					settingtoprint=${settings_items[$i]}
+				fi
+				echo -e "\033[$((25+i));$(( (surface[1]-${#settingtoprint}) /2))H${settingtoprint}"
+			done
+			read -s -n 1 key
+			if [[ -n $key ]]; then
+				if [[ $key = [Ww] ]]; then
+					((settings_item_on--))
+				elif [[ $key = [Ss] ]]; then
+					((settings_item_on++))
+				fi
+			elif [[ -z $key ]] && [[ ${settings_items[$settings_item_on]} = " done " ]]; then
+				break
+			else
+				csoptions=(${settings_options[$settings_item_on]//\"/})
+				while true; do
+					setoptslen=0
+					unset setoptsarr
+					for ((j=0;j<${#csoptions[@]};j++)); do
+						if [[ $j = ${settings_selected[$settings_item_on]} ]]; then
+							addarr="${csoptions[$j]//1/\[}"
+							addarr="${addarr//_/ }"
+							setoptsarr[$j]="${addarr//2/\]}"
+						else
+							addarr="${csoptions[$j]//_/ }"
+							setoptsarr[$j]="${addarr//[12]/ }"
+						fi
+						setoptslen=$((setoptslen+${#setoptsarr[$j]}))
+					done
+					echo -e "\033[$((25+${settings_item_on}));$(( (surface[1]-2-$setoptslen) /2))H${setoptsarr[@]}"
+					read -s -n 1 key
+					if [[ -n $key ]]; then
+						if [[ $key = [Aa] ]]; then
+							((settings_selected[$settings_item_on]--))
+						elif [[ $key = [Dd] ]]; then
+							((settings_selected[$settings_item_on]++))
+						fi
+					else
+						break
+					fi
+					if [[ ${settings_selected[$settings_item_on]} -ge ${#csoptions[@]} ]]; then
+						settings_selected[$settings_item_on]=0
+					elif [[ ${settings_selected[$settings_item_on]} -lt 0 ]]; then
+						settings_selected[$settings_item_on]=$((${#csoptions[@]}-1))
+					fi
+				done
+			fi
+			if [[ $settings_item_on -ge ${#settings_items[@]} ]]; then
+				settings_item_on=0
+			elif [[ $settings_item_on -lt 0 ]]; then
+				settings_item_on=$((${#settings_items[@]}-1))
+			fi
+		done
+		oldsound=$sound
+		sound=${settings_selected[0]}
+		developer=${settings_selected[1]}
+		if [[ $sound -le 1 ]] && [[ $oldsound = 2 ]]; then
+			audio_ -s
+		elif [[ $sound = 2 ]] && [[ $oldsound -lt 2 ]]; then
+			audio_ -t theme -l theme
+		fi
+		settings_ save
+	fi
 }
 function ai_ {
 	#initialize the ai, make sure it spawns at a different location
@@ -623,14 +731,19 @@ function ai_ {
 	done
 }
 function draw_ {
-	echo -e "\033[0;0H$border"
+	echo -e "\033[0m\033[0;0H$border"
 	for ((i=$((${surface[0]}-1));i>-1;i--)); do
 		eval "print=\${map$i[@]}"
-		echo -e "|"$print"|" | sed 's/ //g;s/_/ /g'
+		echo -e "\033[0m|"$print"|" | sed 's/ //g;s/_/ /g'
 	done
 	echo -e "\033[0m\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
 }
 function generate-map_ {
+	if [[ $1 = -s ]]; then
+		silent=true
+	else
+		silent=false
+	fi
 	if [[ -z $treechance ]]; then
 		treechance=5
 	fi
@@ -640,15 +753,15 @@ function generate-map_ {
 	hdir=1
 	border="+-"
 	treeplace=(0 0 0)
-	echo "generating map..."
+	[[ $silent = false ]]&&echo "generating map..."
 	for ((i=1;i<$((${surface[1]}));i++)); do
-		echo -en "\rgenerating border - $(((i+1)*100/surface[1]))%"
+		[[ $silent = false ]]&&echo -en "\rgenerating border - $(((i+1)*100/surface[1]))%"
 		border="$border""-"
 	done
-	echo ""
+	[[ $silent = false ]]&&echo ""
 	border="$border""+"
 	for ((i=0;i<${surface[0]};i++)); do
-		echo -en "\rclearing map - $(((i+1)*100/surface[0]))%"
+		[[ $silent = false ]]&&echo -en "\rclearing map - $(((i+1)*100/surface[0]))%"
 		for ((j=0;j<${surface[1]};j++)); do
 			eval map$i[$j]="_"
 		done
@@ -660,9 +773,9 @@ function generate-map_ {
 	elif [[ $height -ge $((${surface[0]}/4)) ]]; then
 		height=$((${surface[0]}/4))
 	fi
-	echo ""
+	[[ $silent = false ]]&&echo ""
 	for ((i=0;i<${surface[1]};i++)); do
-		echo -en "\rgenerating map - $(((i+1)*100/surface[1]))%"
+		[[ $silent = false ]]&&echo -en "\rgenerating map - $(((i+1)*100/surface[1]))%"
 		if [[ $height -ge $waterlvl ]]; then
 			for ((j=0;j<$height;j++)); do
 				if [[ $j = $((height-1)) ]]; then
@@ -717,7 +830,7 @@ function generate-map_ {
 			((lhc++))
 		fi
 	done
-	echo -e "\ndone"
+	[[ $silent = false ]]&&echo -e "\ndone"
 	if [[ $1 != ds ]]; then
 		memory_ ms mapgen
 	fi
@@ -768,6 +881,14 @@ function input_ {
 			help_
 			read -s -n 1
 			display_
+		elif [[ $key = [${controls[8]}] ]]; then
+			rm -rf ./data/tlock
+			rm -rf ./data/ailock
+			st_cleanup_
+			tput civis
+			st_ini_ $LINES $COLS
+			((rlc++))
+			main_
 		fi
 		if [[ $developer = 1 ]]; then
 			if [[ $key = l ]]; then
@@ -1111,7 +1232,9 @@ function burn_ {
 		echo -e "\033[${invy/-/};$(($2+2))H "
 	elif [[ $1 = wait ]]; then
 		touch data/lit/waiting
-		mplayer -loop 0 audio/fx/burn.ogg 2>/dev/null >/dev/null&
+		if [[ $sound -gt 0 ]]; then
+			mplayer -loop 0 audio/fx/burn.ogg 2>/dev/null >/dev/null&
+		fi
 		litcount=0
 		while true; do
 			oldlitcount=$litcount
