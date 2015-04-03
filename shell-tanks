@@ -11,6 +11,17 @@ else
 	exit
 fi
 
+# Make sure we have some things installed...
+
+if [[ ! $(which mplayer) ]]; then
+	echo "audio won't work unless you install mplayer"
+	read -s -n 1
+fi
+if [[ ! $(which bc) ]]; then
+	echo "physics won't work unless you install bc, the game won't really be playable"
+	read -s -n 1
+fi
+
 # Run shell-tanks
 
 bash run.sh

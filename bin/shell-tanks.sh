@@ -231,6 +231,8 @@ function logos_ {
 			echo -e "\033[${hy[0]};${hcenter}H      NETWORK     "
 		elif [[ $1 = "play" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H       PLAY       "
+		elif [[ $1 = "settings" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H     SETTINGS     "
 		elif [[ $1 = "exit" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H       EXIT       "
 		fi
@@ -266,6 +268,8 @@ function logos_ {
 			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                      ####  ###### ###### ###### ###### ##  ##  #####   ####                                      \033[${hy[1]};${hcenter}H                                ---+ ##     ##       ##     ##     ##   ### ## ##      ##     +---                                \033[${hy[2]};${hcenter}H                              << A |  ####  ######   ##     ##     ##   ###### ##  ###  ####  | D >>                              \033[${hy[3]};${hcenter}H                                ---+     ## ##       ##     ##     ##   ## ### ##   ##     ## +---                                \033[${hy[4]};${hcenter}H                                      ####  ######   ##     ##   ###### ##  ##  #####   ####                                      "
 		elif [[ $1 = "clear" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H                                                                                                                                  \033[${hy[1]};${hcenter}H                                                                                                                              \033[${hy[2]};${hcenter}H                                                                                                                                  \033[${hy[3]};${hcenter}H                                                                                                                              \033[${hy[4]};${hcenter}H                                                                                                                                  "
+		elif [[ $1 = "regenmap" ]]; then
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                  ####  ###### ####### ###### ##  ##   ##      ##   ##   ####                                    \033[${hy[1]};${hcenter}H                             ---+ ## ## ##     ##      ##     ### ##   ###    ### ###### ## ## +---                              \033[${hy[2]};${hcenter}H                           << A | ####  ###### ## #### ###### ######   ####  #### ##  ## ####  | D >>                            \033[${hy[3]};${hcenter}H                             ---+ ## ## ##     ##   ## ##     ## ###   ## #### ## ###### ##    +---                              \033[${hy[4]};${hcenter}H                                  ## ## ###### ####### ###### ##  ##   ##  ##  ## ##  ## ##                                      "
 		elif [[ $1 = "sun" ]]; then
 			center=$(( ( ${surface[1]} - 27 ) / 2 ))
 			sun_height=(0 0 3 4 5 6 7 8 9 10 11 12 13 14 15)
@@ -322,7 +326,7 @@ function title_screen_ {
 	else
 		logosize=small
 	fi
-	selection=("play" "settings" "exit")
+	selection=("play" "regenmap" "settings" "exit")
 	sel=0
 	mainlogo_
 	while true; do
@@ -341,19 +345,24 @@ function title_screen_ {
 			if [[ $sel = 0 ]]; then
 				intitlescreen=false
 				break
-			elif [[ $sel = 1 ]]; then
+			elif [[ $sel = 2 ]]; then
 				logos_ clear
 				settings_ menu
-			elif [[ $sel = 2 ]]; then
+			elif [[ $sel = 1 ]]; then
+				st_cleanup_
+				tput civis
+				((rlc=0))
+				st_ini_ $LINES $COLS
+				main_
+			elif [[ $sel = 3 ]]; then
 				cleanup_
 			fi
 		fi
 		if [[ $sel -ge ${#selection[@]} ]]; then
-				sel=0
-
-			elif [[ $sel -lt 0 ]]; then
-				sel=$((${#selection[@]}-1))
-			fi
+			sel=0
+		elif [[ $sel -lt 0 ]]; then
+			sel=$((${#selection[@]}-1))
+		fi
 	done
 	echo -en "\033[0m"
 }
@@ -578,7 +587,11 @@ function settings_ {
 	elif [[ $1 = save ]]; then
 		echo 'sound="'$sound'" developer="'$developer'"' > ./settings
 	elif [[ $1 = menu ]]; then
-		hy=(25 26 27 28)
+		if [[ $logosize = big ]]; then
+			local settingymod=25
+		else
+			local settingymod=4
+		fi
 		settings_items=("      audio      " " developer mode " " done ")
 		settings_items_sel=("      >audio<      " ">developer mode<" ">done<")
 		settings_options=('"1none2" "1fx2" "1all2"' '"___1off2___" "___1on2___"')
@@ -591,7 +604,7 @@ function settings_ {
 				else
 					settingtoprint=${settings_items[$i]}
 				fi
-				echo -e "\033[$((25+i));$(( (surface[1]-${#settingtoprint}) /2))H${settingtoprint}"
+				echo -e "\033[$((settingymod+i));$(( (surface[1]-${#settingtoprint}) /2))H${settingtoprint}"
 			done
 			read -s -n 1 key
 			if [[ -n $key ]]; then
@@ -609,16 +622,16 @@ function settings_ {
 					unset setoptsarr
 					for ((j=0;j<${#csoptions[@]};j++)); do
 						if [[ $j = ${settings_selected[$settings_item_on]} ]]; then
-							addarr="${csoptions[$j]//1/\[}"
+							addarr="${csoptions[$j]//1/[}"
 							addarr="${addarr//_/ }"
-							setoptsarr[$j]="${addarr//2/\]}"
+							setoptsarr[$j]="${addarr//2/]}"
 						else
 							addarr="${csoptions[$j]//_/ }"
 							setoptsarr[$j]="${addarr//[12]/ }"
 						fi
 						setoptslen=$((setoptslen+${#setoptsarr[$j]}))
 					done
-					echo -e "\033[$((25+${settings_item_on}));$(( (surface[1]-2-$setoptslen) /2))H${setoptsarr[@]}"
+					echo -e "\033[$((settingymod+${settings_item_on}));$(( (surface[1]-2-$setoptslen) /2))H${setoptsarr[@]}"
 					read -s -n 1 key
 					if [[ -n $key ]]; then
 						if [[ $key = [Aa] ]]; then
@@ -651,6 +664,9 @@ function settings_ {
 			audio_ -t theme -l theme
 		fi
 		settings_ save
+		if [[ $logosize = small ]]; then
+			draw_
+		fi
 	fi
 }
 function ai_ {
