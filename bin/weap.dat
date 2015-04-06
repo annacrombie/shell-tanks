@@ -4,27 +4,39 @@ weapon_name=(
 	"nuke"
 	"sNuke"
 	"missle"
+	"ridicu"
 )
 weapon_damage=(
 	"3"
 	"5"
-	"11"
+	"13"
 	"11"
 	"3"
+	"100"
 )
 weapon_speed=(
-	"10"
-	"7"
-	"10"
-	"7"
+	"12"
+	"9"
+	"15"
+	"8"
 	"25"
+	"15"
+)
+weapon_destruction=(
+	"0"
+	"0"
+	"3"
+	"0"
+	"0"
+	"15"
 )
 weapon_time=(
+	"0.15"
 	"0.2"
+	"0.05"
 	"0.2"
-	"0.2"
-	"0.2"
-	"0"
+	"0.05"
+	"0.05"
 )
 weapon_type=(
 	"normal"
@@ -32,6 +44,7 @@ weapon_type=(
 	"normal"
 	"split"
 	"normal"
+	"normal"s
 )
 weapon_ammo=(
 	"45"
@@ -39,6 +52,7 @@ weapon_ammo=(
 	"3"
 	"3"
 	"10"
+	"1"
 )
 weapon_icon_r=(
 	"+--"
@@ -46,6 +60,7 @@ weapon_icon_r=(
 	"=>>"
 	"//>"
 	"8=>"
+	"xxx"
 )
 weapon_shot=(
 	"·"
@@ -53,6 +68,7 @@ weapon_shot=(
 	"*"
 	"*"
 	"*"
+	"X"
 )
 weapon_cost=(
 	"1000"
@@ -60,4 +76,5 @@ weapon_cost=(
 	"2000"
 	"3000"
 	"1500"
+	"9999"
 )

@@ -233,6 +233,8 @@ function logos_ {
 			echo -e "\033[${hy[0]};${hcenter}H       PLAY       "
 		elif [[ $1 = "settings" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H     SETTINGS     "
+		elif [[ $1 = "regenmap" ]]; then
+			echo -e "\033[${hy[0]};${hcenter}H    REGEN  MAP    "
 		elif [[ $1 = "exit" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H       EXIT       "
 		fi
@@ -351,7 +353,7 @@ function title_screen_ {
 			elif [[ $sel = 1 ]]; then
 				st_cleanup_
 				tput civis
-				((rlc=0))
+				((rlc=1))
 				st_ini_ $LINES $COLS
 				main_
 			elif [[ $sel = 3 ]]; then
@@ -564,6 +566,7 @@ function shop_ {
 		if [[ $item = x ]]; then
 			break
 		elif [[ -n $item ]] && [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
+			log_ 0 "$points ${weapon_cost[$item]}"
 			if [[ $points -ge ${weapon_cost[$item]} ]]; then
 				points=$((points-weapon_cost[$item]))
 				mweapon_ammo[$item]=${weapon_ammo[$item]}
@@ -1078,26 +1081,32 @@ function explosion_ {
 		weapexplode=true
 		cbup=true
 	else
-		local bsub=$(( (e_m) /2))
+		local bsub=$(( (e_m) / 2 ))
 		for ((a=0;a<$e_m;a++)); do
 			for ((b=0;b<$((e_m));b++)); do
 				#set possible destroyed blocks
-				pbux=$(( $1 + ( b - bsub ) )) pbuy=$(($2 + ( a - bsub ) ))
+				pbux=$(( $1 + ( b - bsub ) )) pbuy=$(( $2 + ( a - bsub ) ))
 				#get the distance from the origin in x and y
 				d1=$(($1 - pbux)) d2=$(($2 - pbuy))
 				#add the absolute values of those differences to get an average distance
 				d=$(( ${d1//-/} + ${d2//-/} ))
 				#the further away from the origin, the less likely a block is to explode
-				if [[ $d -le 0 ]] || [[ $((RANDOM%d)) = 0 ]]; then
-					bup+=($d"."$pbux"."$pbuy)
+				if [[ $d -le 0 ]] || [[ $(( ( RANDOM%d ) - weapon_destruction[$weapon])) -le 0 ]]; then
+					if [[ $d -ge 10 ]]; then
+						bbup+=($d"."$pbux"."$pbuy)
+					else
+						bup+=($d"."$pbux"."$pbuy)
+					fi
 				fi
 			done
 		done
 		#from so
 		oldifs=$IFS
-		IFS=$'\n' sbup=($(sort <<<"${bup[*]}"))
+		IFS=$'\n'
+		sbup=($(sort <<<"${bup[*]}"))
+		bsbup=($(sort <<<"${bbup[*]}"))
 		IFS=$oldifs
-		bup=(${sbup[@]})
+		bup=(${sbup[@]} ${bsbup[@]})
 	fi
 	if [[ $weapon != 2 ]]; then
 		audio_ -t fx hit/$((RANDOM%6))
