@@ -1,6 +1,7 @@
+#Copyright (C) 2015 Stone Tickle
 function st_ini_ {
 	surface=("$(($1-2))" "$(($2-2))")
-	log_ 0 "shanks2.sh set surface to ${surface[0]}x${surface[1]}"
+	log_ 0 "shell-tanks.sh set surface to ${surface[0]}x${surface[1]}"
 	pos=($((RANDOM%$((${surface[1]}-2))+2)) $(( surface[0] - ( surface[0] / 4 ) )) )
 	oldpos=(${pos[@]})
 	moldpos=(${pos[@]})
@@ -12,10 +13,6 @@ function st_ini_ {
 	weapexplode=true
 
 	langset_
-
-	if [[ $loadsettings = 1 ]]; then
-		settings_ load
-	fi
 
 	#colors
 	c_no="\033[0m"
@@ -99,7 +96,25 @@ function st_ini_ {
 		"Hh" # help
 		"Mm" # menu
 	)
+
 	control_desc=("move_left" "move_right" "fire" "adjust_angle_right" "adjust_angle_left" "switch_weapon" "switch_weapon" "help" "main_menu")
+
+	devcontrols=(
+		"0" # dev controls help
+		"1" # re display
+		"2" # enable interactive mode
+		"3" # enable/disable ai
+		"4" # reload weaps.dat and set ammo to 99 for all weapons
+		"5" # start a fire
+		"6" # reload game functions
+		"7" # self destruct
+		"8" # spawn ai
+	)
+	devcontrol_desc=("dev_controls_help" "re-draw_map" "enable_interactive_mode" "enable/disable_ai" "reload_weaps.dat_and_set_ammo_to_99_for_all_weapons" "start_a_fire" "reload_game_functions" "self_destruct" "spawn_another_ai_(will_break_the_game)")
+
+	if [[ $loadsettings = 1 ]]; then
+		settings_ load
+	fi
 
 	stty -echo -icanon time 0 min 0
 	tput civis
@@ -168,6 +183,8 @@ function main_ {
 			ai_&
 		fi
 		if [[ $(memory_ lh 0) -lt 1 ]]; then
+			weapon_damage[$weapon]=13
+			weapon_destruction[$weapon]=3
 			explosion_ ${pos[@]} hard
 			turn_lock=1
 			game_over_
@@ -309,14 +326,19 @@ function mainlogo_ {
 	mkdir -p ./data/tlock
 	logoid=$RANDOM
 	touch ./data/tlock/$logoid
-	
+	dncycle=$((RANDOM%2))
 	while [[ -f ./data/tlock/$logoid ]]; do
 		if [[ $intitlescreen = true ]]; then
 			logos_ title
 			sleep 0.2
 		elif [[ $intitlescreen = false ]]; then
-			logos_ sun
-			sleep 0.7
+			if [[ $dncycle = 0 ]]; then
+				logos_ sun
+				sleep 0.7
+			elif [[ $dncycle = 1 ]]; then
+				logos_ moon
+				sleep 0.7
+			fi
 		fi
 	done&
 }
@@ -557,12 +579,14 @@ function tank_ {
 function shop_ {
 	bLg=2
 	while true; do
+		display_stats_
 		echo -e "\033[0m\033[5;6H+-=SHOP=-x to exit------+"
 		for ((i=0;i<${#weapon_name[@]};i++)); do
 			echo -e "\033[$((6+i));6H| $i ${weapon_name[$i]} -- ${weapon_cost[$i]} pts  |"
 		done
 		echo -e "\033[$((6+i));6H+-----------------------+"
 		read -p "$(echo -e "\033[$((6+i+1));6HItem to buy >> ")" item 2>&1
+		set -x
 		if [[ $item = x ]]; then
 			break
 		elif [[ -n $item ]] && [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
@@ -577,6 +601,7 @@ function shop_ {
 		else
 			echo -e "\033[$((6+i+bLg));6Hunknown item $item"
 		fi
+		set +x
 		((bLg++))
 	done
 }
@@ -588,15 +613,15 @@ function settings_ {
 			. ./settings
 		fi
 	elif [[ $1 = save ]]; then
-		echo 'sound="'$sound'" developer="'$developer'"' > ./settings
+		echo 'sound="'"$sound"'" developer="'"$developer"'" controls=('"${controls[@]}"')' > ./settings
 	elif [[ $1 = menu ]]; then
 		if [[ $logosize = big ]]; then
 			local settingymod=25
 		else
 			local settingymod=4
 		fi
-		settings_items=("      audio      " " developer mode " " done ")
-		settings_items_sel=("      >audio<      " ">developer mode<" ">done<")
+		settings_items=("      audio      " " developer mode " " controls " " cancel " " done ")
+		settings_items_sel=("      >audio<      " ">developer mode<" ">controls<" ">cancel<" ">done<")
 		settings_options=('"1none2" "1fx2" "1all2"' '"___1off2___" "___1on2___"')
 		settings_selected=($sound $developer)
 		settings_item_on=0
@@ -617,7 +642,40 @@ function settings_ {
 					((settings_item_on++))
 				fi
 			elif [[ -z $key ]] && [[ ${settings_items[$settings_item_on]} = " done " ]]; then
+				oldsound=$sound
+				sound=${settings_selected[0]}
+				developer=${settings_selected[1]}
+				if [[ $sound -le 1 ]] && [[ $oldsound = 2 ]]; then
+					audio_ -s
+				elif [[ $sound = 2 ]] && [[ $oldsound -lt 2 ]]; then
+					audio_ -t theme -l theme
+				fi
+				if [[ $logosize = small ]]; then
+					draw_
+				fi
+				settings_ save
 				break
+			elif [[ -z $key ]] && [[ ${settings_items[$settings_item_on]} = " cancel " ]]; then
+				break
+			elif [[ -z $key ]] && [[ ${settings_items[$settings_item_on]} = " controls " ]]; then
+				draw_
+				for ((x=0;x<${#control_desc[@]};x++)); do
+					echo -en "\033[$((settingymod+x));$(( (surface[1]-${#control_desc[$x]}) /2))H${control_desc[$x]//_/ } - ${controls[$x]}"
+					while true; do
+						read -s -n 1 newcontrol
+						if [[ -n $newcontrol ]]; then
+							if [[ ${newcontrol//[a-z]/} ]]; then
+								controls[$x]=${newcontrol}${newcontrol,,}
+							elif [[ ${newcontrol//[A-Z]/} ]]; then
+								controls[$x]=${newcontrol^^}${newcontrol}
+							fi
+							break
+						fi
+					done
+					echo -en "\033[$((settingymod+x));$(( (surface[1]-${#control_desc[$x]}) /2))H${control_desc[$x]//_/ } - ${controls[$x]}"
+					newcontrols[$x]=$newcontrol
+				done
+				draw_
 			else
 				csoptions=(${settings_options[$settings_item_on]//\"/})
 				while true; do
@@ -658,18 +716,7 @@ function settings_ {
 				settings_item_on=$((${#settings_items[@]}-1))
 			fi
 		done
-		oldsound=$sound
-		sound=${settings_selected[0]}
-		developer=${settings_selected[1]}
-		if [[ $sound -le 1 ]] && [[ $oldsound = 2 ]]; then
-			audio_ -s
-		elif [[ $sound = 2 ]] && [[ $oldsound -lt 2 ]]; then
-			audio_ -t theme -l theme
-		fi
-		settings_ save
-		if [[ $logosize = small ]]; then
-			draw_
-		fi
+		settings_ load
 	fi
 }
 function ai_ {
@@ -750,12 +797,26 @@ function ai_ {
 	done
 }
 function draw_ {
+	if [[ $1 != -d ]]; then
+		if [[ -d ./data/tlock/ ]]; then
+			rm -rf ./data/tlock
+			wastlock=true
+		else
+			wastlock=false
+		fi
+		echo -e "\033[0;0H"
+	fi
 	echo -e "\033[0m\033[0;0H$border"
 	for ((i=$((${surface[0]}-1));i>-1;i--)); do
 		eval "print=\${map$i[@]}"
 		echo -e "\033[0m|"$print"\033[0m|" | sed 's/ //g;s/_/ /g'
 	done
 	echo -e "\033[0m\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
+	if [[ $1 != -d ]]; then
+		if [[ $wastlock = true ]]; then
+			mainlogo_
+		fi
+	fi
 }
 function generate-map_ {
 	if [[ $1 = -s ]]; then
@@ -898,8 +959,6 @@ function input_ {
 			plit=false
 		elif [[ $key = [${controls[7]}] ]]; then
 			help_
-			read -s -n 1
-			display_
 		elif [[ $key = [${controls[8]}] ]]; then
 			rm -rf ./data/tlock
 			rm -rf ./data/ailock
@@ -910,9 +969,9 @@ function input_ {
 			main_
 		fi
 		if [[ $developer = 1 ]]; then
-			if [[ $key = l ]]; then
+			if [[ $key = ${devcontrols[1]} ]]; then
 				display_
-			elif [[ $key = c ]]; then
+			elif [[ $key = ${devcontrols[2]} ]]; then
 				rm -rf data/tlock/*
 				tput cnorm
 				echo -en "\033[2;2H"
@@ -920,21 +979,30 @@ function input_ {
 				tput civis
 				stty -echo -icanon time 0 min 0
 				display_
-			elif [[ $key = i ]]; then
+			elif [[ $key = ${devcontrols[3]} ]]; then
 				if [[ -f ./data/ailock ]]; then
 					rm -rf ./data/ailock
 				else
 					ai_&
 				fi
-			elif [[ $key = n ]]; then
+			elif [[ $key = ${devcontrols[4]} ]]; then
 				load_weaps_
 				for ((i=0;i<${#mweapon_ammo[@]};i++)); do
 					mweapon_ammo[$i]=99
 				done
-			elif [[ $key = b ]]; then
+				display_stats_
+			elif [[ $key = ${devcontrols[5]} ]]; then
 				burn_ spread ${pos[@]}&
-			elif [[ $key = r ]]; then
+			elif [[ $key = ${devcontrols[6]} ]]; then
 				reload_ noini
+			elif [[ $key = ${devcontrols[7]} ]]; then
+				weapon_damage[$weapon]=13
+				weapon_destruction[$weapon]=3
+				explosion_ ${pos[@]} hard
+			elif [[ $key = ${devcontrols[8]} ]]; then
+				ai_&
+			elif [[ $key = ${devcontrols[0]} ]]; then
+				help_ dev
 			fi
 		fi
 	fi
@@ -1067,6 +1135,7 @@ function coord_ {
 	fi
 }
 function explosion_ {
+	unset bup bbup
 	if [[ $wateryshot = true ]]; then
 		erchar=("${cblock[2]}" "${cblock[2]}")
 	else
@@ -1122,6 +1191,7 @@ function explosion_ {
 		log_ 0 "[explosion_] sending explosion data"
 		netsend_ x ${bup[@]}
 	fi
+	log_ 0 "BUP: ${bup[@]}"
 	for ((i=0;i<${#bup[@]};i++)); do
 		posspos_0=($(memory_ pl 0))
 		posspos_1=($(memory_ pl 1))
@@ -1289,7 +1359,7 @@ function display_ {
 		wastlock=false
 	fi
 	echo -e "\033[0;0H"
-	draw_
+	draw_ -d
 	place-items_ tank
 	display_stats_
 	display_health_
@@ -1298,14 +1368,20 @@ function display_ {
 	fi
 }
 function help_ {
-	log_ 0 "helping..."
+	log_ 0 "${1}helping..."
 	hd=""
-	hl=2
-	for ((i=0;i<${#controls[@]};i++)); do
-		hd="$(echo -e "$hd\n""| ${controls[$i]:1} ${control_desc[$i]} |")"
-	done
+	hl=4
+	if [[ $1 = dev ]]; then
+		for ((i=0;i<${#devcontrols[@]};i++)); do
+			hd="$(echo -e "$hd\n""| ${devcontrols[$i]} ${devcontrol_desc[$i]} |")"
+		done
+	else
+		for ((i=0;i<${#controls[@]};i++)); do
+			hd="$(echo -e "$hd\n""| ${controls[$i]:1} ${control_desc[$i]} |")"
+		done
+	fi
 	hb="+"
-	hdl=$(($(echo "$hd" | sed -n '2p' | wc -c)+9))
+	hdl=$(($(echo "$hd" | column -t | sed -n '2p' | wc -c)-3))
 	for ((i=0;i<$hdl;i++)); do
 		hb="$hb""-"
 	done
@@ -1328,11 +1404,20 @@ function poscorrect_ {
 }
 function memory_ {
 	if [[ $1 = ms ]]; then
+		log_ 0 "saving map"
+		if [[ -f data/savnigmap ]]; then
+			log_ 0 "waiting for map save"
+			while [[ -f data/savingmap ]]; do
+				:
+			done
+		fi
+		touch data/savingmap
 		echo "#$(date "+%s")$((RANDOM))" > ./data/ms
 		for ((i=$((${surface[0]}-1));i>-1;i--)); do
 			eval "print=\${map$i[@]}"
 			echo 'map'$i'=("'$(echo $print | sed 's/ /" "/g')'")' >> ./data/ms
 		done
+		rm data/savingmap
 	elif [[ $1 = ml ]]; then
 		. ./data/ms
 	elif [[ $1 = ps ]]; then
@@ -1401,9 +1486,16 @@ function st_cleanup_ {
 	rm -rf ./data/ailock ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard ./data/lit
 	tput cnorm
 }
-if [[ $1 != noini ]]; then
-	st_ini_ "$@"
-else
-	echo -e "\033[1;21H\033[31mreloaded-($rlc)"
-	((rlc++))
-fi
+function st_launch_ {
+	if [[ -z $1 ]]; then
+		echo "please run run.sh instead of directly executing shell-tanks.sh"
+		exit
+	elif [[ $1 != noini ]]; then
+		st_ini_ "$@"
+	else
+		echo -e "\033[1;21H\033[31mreloaded-($rlc)"
+		((rlc++))
+	fi
+}
+st_launch_ "$@"
+

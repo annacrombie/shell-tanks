@@ -1,4 +1,5 @@
 #!/bin/bash
+#Copyright (C) 2015 Stone Tickle
 function launch_ {
 	LINES=$(tput lines)
 	COLS=$(tput cols)
@@ -62,7 +63,7 @@ function arg_ {
 		ip=$3
 		shiftam=3
 	elif [[ "$1" = "-r" ]]; then
-		rm -rf ./data/*
+		rm -rf ./data/* ./settings
 		shiftam=1
 	elif [[ "$1" = "-m" ]]; then
 		sound=0
@@ -99,7 +100,7 @@ function help_ {
 	echo " -l: log to file"
 	echo " -lf: specify log file"
 	echo " -v: log to stty, turned on by -i"
-	echo " -r: remove data folder on launch (if shell-tanks did not cleanup)"
+	echo " -r: reset settings / clear all data"
 	echo " -d: developer mode, enables a few top secret cheats"
 	echo " -i: interactive mode, turns on logging to stty by default"
 	echo " -m: mute all audio"
@@ -195,6 +196,10 @@ function interactive_ {
 	tput cnorm
 	i_history=(" ")
 	hnum=0
+	echo 'shell-tanks version '$(cat ../ver.txt)', Copyright (C) 2015 Stone Tickle'
+	echo 'shell-tanks comes with ABSOLUTELY NO WARRANTY'
+	echo 'This is free software, and you are welcome to redistribute it'
+	echo 'under certain conditions'
 	echo "press escape and enter to enter history mode"
 	while true; do
 		read -p ">>> " key 2>&1

@@ -1,3 +1,4 @@
+#Copyright (C) 2015 Stone Tickle
 #can calculate the trajectory of a projectile, and other basic kinematics
 function constants_ {
 	pi="3.14159265358979323844"

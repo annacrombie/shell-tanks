@@ -1,3 +1,4 @@
+#Copyright (C) 2015 Stone Tickle
 function netini_ {
 	if [[ -z $ip ]]; then
 		ip="127.0.0.1"

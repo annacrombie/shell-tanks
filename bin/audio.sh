@@ -1,3 +1,4 @@
+#Copyright (C) 2015 Stone Tickle
 function audio_ {
 	if [[ $sound = 0 ]]; then
 		return 2
