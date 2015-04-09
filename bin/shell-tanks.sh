@@ -110,6 +110,7 @@ function st_ini_ {
 		"7" # self destruct
 		"8" # spawn ai
 	)
+
 	devcontrol_desc=("dev_controls_help" "re-draw_map" "enable_interactive_mode" "enable/disable_ai" "reload_weaps.dat_and_set_ammo_to_99_for_all_weapons" "start_a_fire" "reload_game_functions" "self_destruct" "spawn_another_ai_(will_break_the_game)")
 
 	if [[ $loadsettings = 1 ]]; then
@@ -586,7 +587,6 @@ function shop_ {
 		done
 		echo -e "\033[$((6+i));6H+-----------------------+"
 		read -p "$(echo -e "\033[$((6+i+1));6HItem to buy >> ")" item 2>&1
-		set -x
 		if [[ $item = x ]]; then
 			break
 		elif [[ -n $item ]] && [[ -z ${item//[0-9]/} ]] && [[ $item -lt ${#weapon_name[@]} ]]; then
@@ -601,7 +601,6 @@ function shop_ {
 		else
 			echo -e "\033[$((6+i+bLg));6Hunknown item $item"
 		fi
-		set +x
 		((bLg++))
 	done
 }
