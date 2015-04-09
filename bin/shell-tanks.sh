@@ -362,8 +362,10 @@ function title_screen_ {
 				((sel--))
 			elif [[ $key = [${controls[1]}] ]]; then
 				((sel++))
-			elif [[ $key = h ]] || [[ $key = H ]]; then
+			elif [[ $key = [${controls[7]}] ]]; then
 				help_
+			elif [[ $developer = 1 ]] && [[ $key = ${devcontrols[0]} ]]; then
+				help_ dev
 			fi
 		else
 			audio_ -t fx hit/$((RANDOM%6))
@@ -619,6 +621,7 @@ function settings_ {
 		else
 			local settingymod=4
 		fi
+		hcolor=(1 6 3 4 5 6)
 		settings_items=("      audio      " " developer mode " " controls " " cancel " " done ")
 		settings_items_sel=("      >audio<      " ">developer mode<" ">controls<" ">cancel<" ">done<")
 		settings_options=('"1none2" "1fx2" "1all2"' '"___1off2___" "___1on2___"')
@@ -626,12 +629,16 @@ function settings_ {
 		settings_item_on=0
 		while true; do
 			for ((i=0;i<${#settings_items[@]};i++)); do
+				((hcycle++))
+				if [[ $hcycle = 6 ]]; then
+					hcycle=0
+				fi
 				if [[ $i = $settings_item_on ]]; then
 					settingtoprint=${settings_items_sel[$i]}
 				else
 					settingtoprint=${settings_items[$i]}
 				fi
-				echo -e "\033[$((settingymod+i));$(( (surface[1]-${#settingtoprint}) /2))H${settingtoprint}"
+				echo -e "\033[3${hcolor[$hcycle]}m\033[$((settingymod+i));$(( (surface[1]-${#settingtoprint}) /2))H${settingtoprint}"
 			done
 			read -s -n 1 key
 			if [[ -n $key ]]; then
@@ -723,6 +730,8 @@ function ai_ {
 	touch data/ailock
 	isai=true
 	shots_fired=1000
+	weapon=0
+	mweapon_ammo[0]=45
 	epos=($((RANDOM%$((${surface[1]}-2))+2)) $(( surface[0] - ( surface[0] / 4 ) )) )
 	while [[ ${epos[0]} -ge $((${pos[0]}-2)) ]] && [[ ${epos[0]} -le $((${pos[0]}+2)) ]]; do
 			epos[0]=$((RANDOM%$((${surface[1]}-2))+2))
@@ -734,7 +743,9 @@ function ai_ {
 	while [[ -f data/ailock ]]; do
 		checkblock_
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
-			explosion_ ${pos[@]}
+			weapon_damage[$weapon]=9
+			weapon_destruction[$weapon]=2
+			explosion_ ${pos[@]} hard
 			rm -rf data/ailock
 			break
 		fi
@@ -810,7 +821,11 @@ function draw_ {
 		eval "print=\${map$i[@]}"
 		echo -e "\033[0m|"$print"\033[0m|" | sed 's/ //g;s/_/ /g'
 	done
-	echo -e "\033[0m\033[1;$(((surface[1]-18)/2))H-=Press H for Help=-"
+	if [[ $developer = 0 ]]; then
+		echo -e "\033[0m\033[1;$(((surface[1]-18)/2))H-=Press ${controls[7]:1} for Help=-"
+	elif [[ $developer = 1 ]]; then
+		echo -e "\033[0m\033[1;$(((surface[1]-42)/2))H-=Press ${controls[7]:1} for Help or ${devcontrols[0]} for Developer Help=-"
+	fi
 	if [[ $1 != -d ]]; then
 		if [[ $wastlock = true ]]; then
 			mainlogo_
@@ -1497,4 +1512,3 @@ function st_launch_ {
 	fi
 }
 st_launch_ "$@"
-
