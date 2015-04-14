@@ -184,7 +184,7 @@ function main_ {
 			ai_&
 		fi
 		if [[ $(memory_ lh 0) -lt 1 ]]; then
-			weapon_damage[$weapon]=13
+			weapon_radius[$weapon]=13
 			weapon_destruction[$weapon]=3
 			explosion_ ${pos[@]} hard
 			turn_lock=1
@@ -273,23 +273,23 @@ function logos_ {
 			fi
 			echo -e "\033[3${tcolor[$tcycle]}m\033[2;${center}H      ___           ___           ___                                 \n\033[3;${center}H     /\__\         /\  \         /\__\                                \n\033[4;${center}H    /:/ _/_        \:\  \       /:/ _/_                               \n\033[5;${center}H   /:/ /\  \        \:\  \     /:/ /\__\                              \n\033[6;${center}H  /:/ /::\  \   ___ /::\  \   /:/ /:/ _/_   ___     ___   ___     ___ \n\033[7;${center}H /:/_/:/\:\__\ /\  /:/\:\__\ /:/_/:/ /\__\ /\  \   /\__\ /\  \   /\__\ \\n\033[8;${center}H \:\/:/ /:/  / \:\/:/  \/__/ \:\/:/ /:/  / \:\  \ /:/  / \:\  \ /:/  /\n\033[9;${center}H  \::/ /:/  /   \::/__/       \::/_/:/  /   \:\  /:/  /   \:\  /:/  / \n\033[10;${center}H   \/_/:/  /     \:\  \        \:\/:/  /     \:\/:/  /     \:\/:/  /  \n\033[11;${center}H     /:/  /       \:\__\        \::/  /       \::/  /       \::/  /   \n\033[12;${center}H     \/__/         \/__/         \/__/         \/__/         \/__/    \n\033[13;${center}H                  ___           ___           ___           ___     \n\033[14;${center}H      ___        /  /\         /__/\         /__/|         /  /\    \n\033[15;${center}H     /  /\      /  /::\        \  \:\       |  |:|        /  /:/_   \n\033[16;${center}H    /  /:/     /  /:/\:\        \  \:\      |  |:|       /  /:/ /\  \n\033[17;${center}H   /  /:/     /  /:/~/::\   _____\__\:\   __|  |:|      /  /:/ /::\ \n\033[18;${center}H  /  /::\    /__/:/ /:/\:\ /__/::::::::\ /__/\_|:|____ /__/:/ /:/\:\ \\n\033[19;${center}H /__/:/\:\   \  \:\/:/__\/ \  \:\~~\~~\/ \  \:\/:::::/ \  \:\/:/~/:/\n\033[20;${center}H \__\/  \:\   \  \::/       \  \:\  ~~~   \  \::/~~~~   \  \::/ /:/ \n\033[21;${center}H      \  \:\   \  \:\        \  \:\        \  \:\        \__\/ /:/  \n\033[22;${center}H       \__\/    \  \:\        \  \:\        \  \:\         /__/:/   \n\033[23;${center}H                 \__\/         \__\/         \__\/         \__\/\033[0m"
 		elif [[ $1 = "humanvcomputer" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H        ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####      #####  ####  ##      ## ####  ##  ## ###### ###### ####        \033[${hy[1]};${hcenter}H   ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##        ##     ##  ## ###    ### ## ## ##  ##   ##   ##     ## ## +---  \033[${hy[2]};${hcenter}H << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ##      ##  ## ####  #### ####  ##  ##   ##   ###### ####  | D >>\033[${hy[3]};${hcenter}H   ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##    ##     ##  ## ## #### ## ##    ##  ##   ##   ##     ## ## +---  \033[${hy[4]};${hcenter}H        ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####      #####  ####  ##  ##  ## ##     ####    ##   ###### ## ##       "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H        ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####      #####  ####  ##      ## ####  ##  ## ###### ###### ####        \033[${hy[1]};${hcenter}H   ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##        ##     ##  ## ###    ### ## ## ##  ##   ##   ##     ## ## +---  \033[${hy[2]};${hcenter}H << ${controls[0]:1} | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ##      ##  ## ####  #### ####  ##  ##   ##   ###### ####  | ${controls[1]:1} >>\033[${hy[3]};${hcenter}H   ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##    ##     ##  ## ## #### ## ##    ##  ##   ##   ##     ## ## +---  \033[${hy[4]};${hcenter}H        ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####      #####  ####  ##  ##  ## ##     ####    ##   ###### ## ##       "
 		elif [[ $1 = "humanvhuman" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                 ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####    ##  ## ##  ## ##      ##   ##   ##  ##                  \033[${hy[1]};${hcenter}H            ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##       ##  ## ##  ## ###    ### ###### ### ## +---             \033[${hy[2]};${hcenter}H          << A | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ###### ##  ## ####  #### ##  ## ###### | D >>           \033[${hy[3]};${hcenter}H            ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##   ##  ## ##  ## ## #### ## ###### ## ### +---             \033[${hy[4]};${hcenter}H                 ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####    ##  ##  ####  ##  ##  ## ##  ## ##  ##                  "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                 ##  ## ##  ## ##      ##   ##   ##  ##   ##  ##  ####    ##  ## ##  ## ##      ##   ##   ##  ##                  \033[${hy[1]};${hcenter}H            ---+ ##  ## ##  ## ###    ### ###### ### ##   ##  ## ##       ##  ## ##  ## ###    ### ###### ### ## +---             \033[${hy[2]};${hcenter}H          << ${controls[0]:1} | ###### ##  ## ####  #### ##  ## ######   ##  ##  ####    ###### ##  ## ####  #### ##  ## ###### | ${controls[1]:1} >>           \033[${hy[3]};${hcenter}H            ---+ ##  ## ##  ## ## #### ## ###### ## ###    ####      ##   ##  ## ##  ## ## #### ## ###### ## ### +---             \033[${hy[4]};${hcenter}H                 ##  ##  ####  ##  ##  ## ##  ## ##  ##     ##    ####    ##  ##  ####  ##  ##  ## ##  ## ##  ##                  "
 		elif [[ $1 = "local" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                               ##      ####    #####   ##   ##                                                    \033[${hy[1]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[2]};${hcenter}H                                        << A | ##     ##  ## ##      ##  ## ##     | D >>                                         \033[${hy[3]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[4]};${hcenter}H                                               ######  ####    ##### ##  ## ######                                                "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                               ##      ####    #####   ##   ##                                                    \033[${hy[1]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[2]};${hcenter}H                                        << ${controls[0]:1} | ##     ##  ## ##      ##  ## ##     | ${controls[1]:1} >>                                         \033[${hy[3]};${hcenter}H                                          ---+ ##     ##  ##  ##     ###### ##     +---                                           \033[${hy[4]};${hcenter}H                                               ######  ####    ##### ##  ## ######                                                "
 		elif [[ $1 = "network" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                         ##  ## ###### ###### ##    ##  ####  ####  ## ##                                         \033[${hy[1]};${hcenter}H                                    ---+ ### ## ##       ##   ##    ## ##  ## ## ## ## ## +---                                    \033[${hy[2]};${hcenter}H                                  << A | ###### ######   ##   ## ## ## ##  ## ####  ####  | D >>                                  \033[${hy[3]};${hcenter}H                                    ---+ ## ### ##       ##   ###  ### ##  ## ## ## ## ## +---                                    \033[${hy[4]};${hcenter}H                                         ##  ## ######   ##   ##    ##  ####  ## ## ## ##                                         "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                         ##  ## ###### ###### ##    ##  ####  ####  ## ##                                         \033[${hy[1]};${hcenter}H                                    ---+ ### ## ##       ##   ##    ## ##  ## ## ## ## ## +---                                    \033[${hy[2]};${hcenter}H                                  << ${controls[0]:1} | ###### ######   ##   ## ## ## ##  ## ####  ####  | ${controls[1]:1} >>                                  \033[${hy[3]};${hcenter}H                                    ---+ ## ### ##       ##   ###  ### ##  ## ## ## ## ## +---                                    \033[${hy[4]};${hcenter}H                                         ##  ## ######   ##   ##    ##  ####  ## ## ## ##                                         "
 		elif [[ $1 = "exit" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                    ##### ##  ## ###### ######                                                    \033[${hy[1]};${hcenter}H                                               ---+ ##     ####    ##     ##   +---                                               \033[${hy[2]};${hcenter}H                                             << A | #####   ##     ##     ##   | D >>                                             \033[${hy[3]};${hcenter}H                                               ---+ ##     ####    ##     ##   +---                                               \033[${hy[4]};${hcenter}H                                                    ##### ##  ## ######   ##                                                      "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                    ##### ##  ## ###### ######                                                    \033[${hy[1]};${hcenter}H                                               ---+ ##     ####    ##     ##   +---                                               \033[${hy[2]};${hcenter}H                                             << ${controls[0]:1} | #####   ##     ##     ##   | ${controls[1]:1} >>                                             \033[${hy[3]};${hcenter}H                                               ---+ ##     ####    ##     ##   +---                                               \033[${hy[4]};${hcenter}H                                                    ##### ##  ## ######   ##                                                      "
 		elif [[ $1 = "play" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                    ####  ##       ##   ##  ##                                                    \033[${hy[1]};${hcenter}H                                               ---+ ## ## ##     ###### ###### +---                                               \033[${hy[2]};${hcenter}H                                             << A | ####  ##     ##  ##   ##   | D >>                                             \033[${hy[3]};${hcenter}H                                               ---+ ##    ##     ######   ##   +---                                               \033[${hy[4]};${hcenter}H                                                    ##    ###### ##  ##   ##                                                      "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                                    ####  ##       ##   ##  ##                                                    \033[${hy[1]};${hcenter}H                                               ---+ ## ## ##     ###### ###### +---                                               \033[${hy[2]};${hcenter}H                                             << ${controls[0]:1} | ####  ##     ##  ##   ##   | ${controls[1]:1} >>                                             \033[${hy[3]};${hcenter}H                                               ---+ ##    ##     ######   ##   +---                                               \033[${hy[4]};${hcenter}H                                                    ##    ###### ##  ##   ##                                                      "
 		elif [[ $1 = "settings" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                      ####  ###### ###### ###### ###### ##  ##  #####   ####                                      \033[${hy[1]};${hcenter}H                                ---+ ##     ##       ##     ##     ##   ### ## ##      ##     +---                                \033[${hy[2]};${hcenter}H                              << A |  ####  ######   ##     ##     ##   ###### ##  ###  ####  | D >>                              \033[${hy[3]};${hcenter}H                                ---+     ## ##       ##     ##     ##   ## ### ##   ##     ## +---                                \033[${hy[4]};${hcenter}H                                      ####  ######   ##     ##   ###### ##  ##  #####   ####                                      "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                      ####  ###### ###### ###### ###### ##  ##  #####   ####                                      \033[${hy[1]};${hcenter}H                                ---+ ##     ##       ##     ##     ##   ### ## ##      ##     +---                                \033[${hy[2]};${hcenter}H                              << ${controls[0]:1} |  ####  ######   ##     ##     ##   ###### ##  ###  ####  | ${controls[1]:1} >>                              \033[${hy[3]};${hcenter}H                                ---+     ## ##       ##     ##     ##   ## ### ##   ##     ## +---                                \033[${hy[4]};${hcenter}H                                      ####  ######   ##     ##   ###### ##  ##  #####   ####                                      "
 		elif [[ $1 = "clear" ]]; then
 			echo -e "\033[${hy[0]};${hcenter}H                                                                                                                                  \033[${hy[1]};${hcenter}H                                                                                                                              \033[${hy[2]};${hcenter}H                                                                                                                                  \033[${hy[3]};${hcenter}H                                                                                                                              \033[${hy[4]};${hcenter}H                                                                                                                                  "
 		elif [[ $1 = "regenmap" ]]; then
-			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                  ####  ###### ####### ###### ##  ##   ##      ##   ##   ####                                    \033[${hy[1]};${hcenter}H                             ---+ ## ## ##     ##      ##     ### ##   ###    ### ###### ## ## +---                              \033[${hy[2]};${hcenter}H                           << A | ####  ###### ## #### ###### ######   ####  #### ##  ## ####  | D >>                            \033[${hy[3]};${hcenter}H                             ---+ ## ## ##     ##   ## ##     ## ###   ## #### ## ###### ##    +---                              \033[${hy[4]};${hcenter}H                                  ## ## ###### ####### ###### ##  ##   ##  ##  ## ##  ## ##                                      "
+			echo -e "\033[3${hcolor[$hcycle]}m\033[${hy[0]};${hcenter}H                                  ####  ###### ####### ###### ##  ##   ##      ##   ##   ####                                    \033[${hy[1]};${hcenter}H                             ---+ ## ## ##     ##      ##     ### ##   ###    ### ###### ## ## +---                              \033[${hy[2]};${hcenter}H                           << ${controls[0]:1} | ####  ###### ## #### ###### ######   ####  #### ##  ## ####  | ${controls[1]:1} >>                            \033[${hy[3]};${hcenter}H                             ---+ ## ## ##     ##   ## ##     ## ###   ## #### ## ###### ##    +---                              \033[${hy[4]};${hcenter}H                                  ## ## ###### ####### ###### ##  ##   ##  ##  ## ##  ## ##                                      "
 		elif [[ $1 = "sun" ]]; then
 			center=$(( ( ${surface[1]} - 27 ) / 2 ))
 			sun_height=(0 0 3 4 5 6 7 8 9 10 11 12 13 14 15)
@@ -448,6 +448,7 @@ function place-items_ {
 				fi
 			done
 			log_ 0 "max height $maxh"
+			shot_hit_player=false
 			for ((i=0;i<${#points[@]};i++)); do
 				if [[ ! -d ./data/shot ]]; then
 					break
@@ -499,7 +500,7 @@ function place-items_ {
 					fi
 
 					#place the shot
-					echo -e "\033[0m\033[$pointsInverted;$((shot_x+1))H${weapon_shot[$weapon]}"
+					echo -e "\033[0m\033[$pointsInverted;$((shot_x+1))H${weapon_shot_icon[$weapon]}"
 					sleep ${weapon_time[$weapon]}
 
 					if [[ $shottype = split ]] && [[ ${points[$i]} = $maxh ]]; then
@@ -510,7 +511,17 @@ function place-items_ {
 					fi
 
 					#if [[ ${sb[0]} = "#" ]] || [[ ${sb[1]} = "#" ]] || [[ ${sb[2]} = "#" ]]; then
-					if [[ ${sb[4]//\\033\[3[0-9]m/} = $iblock ]] || [[ $((${#points[@]}-1)) = $i ]]; then
+					if [[ $i -gt 1 ]]; then
+						posspos_0=($(memory_ pl 0))
+						posspos_1=($(memory_ pl 1))
+						if [[ ${posspos_0[0]} = $shot_x ]] && [[ ${posspos_0[1]} = ${points[$i]} ]]; then
+							shot_hit_player=true
+						elif [[ ${posspos_1[0]} = $shot_x ]] && [[ ${posspos_1[1]} = ${points[$i]} ]]; then
+							shot_hit_player=true
+						fi
+					fi
+
+					if [[ ${sb[4]//\\033\[3[0-9]m/} = $iblock ]] || [[ $((${#points[@]}-1)) = $i ]] || [[ $shot_hit_player = true ]]; then
 						log_ 0 "shot # $2 hit"
 						explosion_ $shot_x ${points[$i]}
 						if [[ $shottype != beensplit ]]; then
@@ -743,7 +754,7 @@ function ai_ {
 	while [[ -f data/ailock ]]; do
 		checkblock_
 		if [[ $(memory_ lh 1) -lt 1 ]]; then
-			weapon_damage[$weapon]=9
+			weapon_radius[$weapon]=9
 			weapon_destruction[$weapon]=2
 			explosion_ ${pos[@]} hard
 			rm -rf data/ailock
@@ -767,14 +778,21 @@ function ai_ {
 			elif [[ $((${ppos[0]}-${pos[0]})) -gt 0 ]]; then
 				while [[ $angle != 45 ]] && [[ -f data/ailock ]]; do
 					if [[ $edist -lt 11 ]] && [[ $edist -gt 9 ]]; then
-					adjust_angle_ 0 ai
-					sleep $ai_tick
+						if [[ $(memory_ lh 1) -lt 1 ]]; then
+							weapon_radius[$weapon]=9
+							weapon_destruction[$weapon]=2
+							explosion_ ${pos[@]} hard
+							rm -rf data/ailock
+							break
+						fi
+						adjust_angle_ 0 ai
+						sleep $ai_tick
 					else
 						break
 					fi
 				done
 			fi
-			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 3 ]] && [[ $((SECONDS-2)) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
+			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 5 ]] && [[ $((SECONDS+(${weapon_cooldown[$weapon]}*-1))) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
 				((shots_fired++))
 				fire_&last_shot=$SECONDS
 				mweapon_ammo[$weapon]=$((${mweapon_ammo[$weapon]}-1))
@@ -948,7 +966,7 @@ function input_ {
 			poscorrect_
 		elif [[ $key = [${controls[2]}] ]]; then
 			memory_ sl
-			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 3 ]] && [[ $((SECONDS-1)) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
+			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 5 ]] && [[ $((SECONDS+(${weapon_cooldown[$weapon]}*-1))) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
 				((shots_fired++))
 				points=$((points+100))
 				fire_&last_shot=$SECONDS
@@ -1010,7 +1028,7 @@ function input_ {
 			elif [[ $key = ${devcontrols[6]} ]]; then
 				reload_ noini
 			elif [[ $key = ${devcontrols[7]} ]]; then
-				weapon_damage[$weapon]=13
+				weapon_radius[$weapon]=13
 				weapon_destruction[$weapon]=3
 				explosion_ ${pos[@]} hard
 			elif [[ $key = ${devcontrols[8]} ]]; then
@@ -1155,8 +1173,7 @@ function explosion_ {
 	else
 		erchar=(" " "_")
 	fi
-	e_m=${weapon_damage[$weapon]} # set magnitude
-	#make sure it is odd, it just looks better
+	e_m=${weapon_radius[$weapon]} # set magnitude
 	if [[ $1 = "-b" ]]; then
 		shift
 		log_ 0 "[explosion_] using custom bup: $@"
@@ -1218,13 +1235,13 @@ function explosion_ {
 				sleep 0.1
 			fi
 			if [[ ${posspos_0[0]} -ge $((${bup1%.*}-1)) ]] && [[ ${posspos_0[0]} -le $((${bup1%.*}+1)) ]] && [[ ${posspos_0[1]} -ge $((${bup1#*.}-1)) ]] && [[ ${posspos_0[1]} -le $((${bup1#*.})) ]]; then
-				memory_ sh 0 $(( $(memory_ lh 0) - $((RANDOM%5+5)) ))
+				memory_ sh 0 $(( $(memory_ lh 0) - ${weapon_damage[$weapon]} ))
 				showedexp=1
 				display_health_
 				log_ 0 "explosion damaged player 0"
 			fi
 			if [[ ${posspos_1[0]} -ge $((${bup1%.*}-1)) ]] && [[ ${posspos_1[0]} -le $((${bup1%.*}+1)) ]] && [[ ${posspos_1[1]} -ge $((${bup1#*.}-1)) ]] && [[ ${posspos_1[1]} -le $((${bup1#*.})) ]]; then
-				memory_ sh 1 $(( $(memory_ lh 1) - $((RANDOM%5+5)) ))
+				memory_ sh 1 $(( $(memory_ lh 1) - ${weapon_damage[$weapon]} ))
 				display_health_
 				showedexp=1
 				log_ 0 "explosion damaged player 1"
@@ -1431,7 +1448,7 @@ function memory_ {
 			eval "print=\${map$i[@]}"
 			echo 'map'$i'=("'$(echo $print | sed 's/ /" "/g')'")' >> ./data/ms
 		done
-		rm data/savingmap
+		rm -f data/savingmap
 	elif [[ $1 = ml ]]; then
 		. ./data/ms
 	elif [[ $1 = ps ]]; then
@@ -1459,28 +1476,6 @@ function memory_ {
 		fi
 		omt[$2]=$(cat ./data/$3 | head -n 1)
 	fi
-}
-function load_weaps_ {
-	. weap.dat
-	for ((i=0;i<${#weapon_name[@]};i++)); do
-		wnl="$(echo ${weapon_name[$i]} | wc -c)"
-		if [[ $wnl -gt 7 ]]; then
-			weapon_name[$i]="  2lng,"
-		elif [[ $wnl -lt 7 ]]; then
-			weapon_name[$i]="$(printf "%-6s" ${weapon_name[$i]})"
-		else
-			weapon_name[$i]=${weapon_name[$i]}
-		fi
-		if [[ ! ${weapon_damage[$i]} ]] || [[ ! ${weapon_ammo[$i]} ]] || [[ ! ${weapon_icon_r[$i]} ]]; then
-			log_ 1 "error parsing weapon file"
-			break
-		fi
-		mweapon_ammo[$i]=0
-		wcon=($(echo ${weapon_icon_r[$i]} | sed 's/./& /g;s/</>/g;s/>/</g;s/[{]/\}/g;s/[}]/\{/g;s/[]]/\[/g;s/[[]/\]/g;s/[)]/\(/g;s/[(]/\)/g;s/\//\\/g;s/[\]/\//g'))
-		weapon_icon_l[$i]="${wcon[2]}${wcon[1]}${wcon[0]}"
-	done
-	mweapon_ammo[0]=45
-	shottype=${weapon_type[0]}
 }
 function game_over_ {
 	rm -rf ./data/tlock

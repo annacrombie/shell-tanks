@@ -92,6 +92,7 @@ function reload_ {
 	import_ audio.sh
 	import_ physics.sh
 	import_ network.sh
+	import_ weapons.sh
 	import_ shell-tanks.sh $1 $LINES $COLS
 }
 function help_ {

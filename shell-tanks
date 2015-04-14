@@ -11,17 +11,37 @@ else
 	exit
 fi
 
-# Make sure we have some things installed...
+# See if we have some things installed...
 
-if [[ ! $(which mplayer) ]]; then
+if [[ ! -f warnings ]]; then
+	echo 'mpwarn=false bcwarn=false bashvwarn=false' > warnings
+fi
+
+. warnings
+
+if [[ ! $(which mplayer) ]] && [[ $mpwarn = true ]]; then
 	echo "audio won't work unless you install mplayer"
+	mpwarn=true
 	read -s -n 1
+else
+	mpwarn=false
 fi
-if [[ ! $(which bc) ]]; then
+if [[ ! $(which bc) ]] && [[ $bcwarn = true ]]; then
 	echo "physics won't work unless you install bc, the game won't really be playable"
+	bcwarn=true
 	read -s -n 1
+else
+	bcwarn=false
 fi
+if [[ ! $(which bc) ]] && [[ $bcwarn = true ]]; then
+	echo "physics won't work unless you install bc, the game won't really be playable"
+	bcwarn=true
+	read -s -n 1
+else
+	bcwarn=false
+fi
+echo 'mpwarn='$mpwarn' bcwarn='$bcwarn'' > warnings
 
 # Run shell-tanks
 
-bash run.sh
+bash run.sh "$@"

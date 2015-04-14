@@ -53,12 +53,18 @@ function plot-points_ {
 	vo=$1; theta=$2; y1=$3
 	set-variables_ $theta $vo
 	range=$(round_ $(range_))
+	if [[ ${weapon_gravity[$weapon]} = false ]]; then
+		ay=0
+		range=${weapon_range[$weapon]}
+	fi
 	for ((i=0;i<$range;i++)); do
 		h=$(height_ $i)
 		rh=$(round_ $h)
 		points[$i]="$rh"
 	done
-	points+=(0)
+	if [[ ${weapon_gravity[$weapon]} = true ]]; then
+		points+=(0)
+	fi
 	log_ 0 "physics.sh: calculated: ${points[@]}"
 }
 constants_
