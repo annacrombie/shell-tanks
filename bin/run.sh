@@ -78,7 +78,7 @@ function arg_ {
 		treechance=$2
 		shiftam=2
 	elif [[ "$1" = "-noai" ]]; then
-		noai=true
+		noai=1
 		shiftam=1
 	elif [[ "$1" = "-h" ]]; then
 		help_
@@ -96,7 +96,7 @@ function reload_ {
 	import_ shell-tanks.sh $1 $LINES $COLS
 }
 function help_ {
-	echo "usage: run.sh"
+	echo "usage: run.sh, (passing any arguments that change settings such as -d will prevent settings from being parsed)"
 	echo " -h: help"
 	echo " -l: log to file"
 	echo " -lf: specify log file"
@@ -112,7 +112,7 @@ function help_ {
 	echo "     must be a 1 or 0.  Client 0 will generate the map, and"
 	echo "     client 1 will listen for a finished map, so client 1  "
 	echo "     needs to be started before client 0.  If no ip is supplied,"
-	echo "     it reverts to 127.0.0.1.  This feature is very buggy!"
+	echo "     it reverts to 127.0.0.1.  This feature -i-s--v-e-r-y--b-u-g-g-y- dont work!"
 	echo " -g <tank, terrain>: specify a graphics file for either the tank "
 	echo "     (located in bin/graphic/tank/) or terrain (located in bin/"
 	echo "     graphic/terrain/"
@@ -129,7 +129,7 @@ function ini_ {
 	sound=2
 	logging=2
 	loadsettings=1
-	noai=false
+	noai=0
 	network=false
 }
 function import_ {
@@ -194,7 +194,7 @@ function cleanup_ {
 }
 function interactive_ {
 	stty $oldstty
-	tput cnorm
+	echo -en "\e[?12l\e[?25h"
 	i_history=(" ")
 	hnum=0
 	echo 'shell-tanks version '$(cat ../ver.txt)', Copyright (C) 2015 Stone Tickle'
