@@ -19,28 +19,28 @@ fi
 
 . warnings
 
-if [[ ! $(which mplayer) ]] && [[ $mpwarn = true ]]; then
+if [[ ! $(which mplayer) ]] && [[ $mpwarn = false ]]; then
 	echo "audio won't work unless you install mplayer"
 	mpwarn=true
 	read -s -n 1
 else
 	mpwarn=false
 fi
-if [[ ! $(which bc) ]] && [[ $bcwarn = true ]]; then
+if [[ ! $(which bc) ]] && [[ $bcwarn = false ]]; then
 	echo "physics won't work unless you install bc, the game won't really be playable"
 	bcwarn=true
 	read -s -n 1
 else
 	bcwarn=false
 fi
-if [[ ! $(which bc) ]] && [[ $bcwarn = true ]]; then
-	echo "physics won't work unless you install bc, the game won't really be playable"
-	bcwarn=true
+if [[ ${BASH_VERSION//.*/} -lt 4 ]] && [[ $bashvwarn = false ]]; then
+	echo "some game aspects may break unless you update bash to version 4"
+	bashvwarn=true
 	read -s -n 1
 else
-	bcwarn=false
+	bashvwarn=false
 fi
-echo 'mpwarn='$mpwarn' bcwarn='$bcwarn'' > warnings
+echo 'mpwarn='$mpwarn' bcwarn='$bcwarn' bashvwarn='$bashvwarn'' > warnings
 
 # Run shell-tanks
 

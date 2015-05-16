@@ -73,7 +73,7 @@ function st_ini_ {
 	smod=0
 	angle=90
 	speed=0.1
-	ai_tick=(0.3 0.2 0.1)
+	ai_tick=(0.4 0.3 0.2 0.1)
 	points=0
 	wheels=0
 	momentum=0
@@ -81,7 +81,12 @@ function st_ini_ {
 	direction="r"
 	isai=false
 	aikilled=0
-	players=2
+	if [[ -z $players ]]; then
+		players=2
+	fi
+	if [[ $title_screen != false ]]; then
+		title_screen = true
+	fi
 
 	weapon=0
 	load_weaps_
@@ -102,14 +107,14 @@ function st_ini_ {
 
 	devcontrols=(
 		"0" # dev controls help
-		"1" # re display
+		"1" # re-draw display
 		"2" # enable interactive mode
-		"3" # enable/disable ai
-		"4" # reload weaps.dat and set ammo to 99 for all weapons
+		"3" # enable/disable (single) ai
+		"4" # reload all weapons and conf
 		"5" # start a fire
 		"6" # reload game functions
 		"7" # self destruct
-		"8" # spawn ai
+		"8" # spawn additional ais
 		"9" # superheal
 	)
 
@@ -120,7 +125,7 @@ function st_ini_ {
 	fi
 
 	stty -echo -icanon time 0 min 0
-	echo -e "\e[?25l"
+	tput civis
 	echo -n -e "\033]0;shell-tanks build $(cat ../ver.txt)\007"
 }
 function load_graphics_ {
@@ -153,7 +158,9 @@ function main_ {
 	if [[ $rlc = 0 ]] && [[ $sound -gt 1 ]]; then
 		audio_ -t theme -l theme
 	fi
-	title_screen_
+	if [[ $title_screen = true ]]; then
+		title_screen_
+	fi
 	turn_lock=0
 	memory_ sh 0 ${maxhealth[0]}
 	memory_ sh 1 ${maxhealth[1]}
@@ -164,7 +171,12 @@ function main_ {
 		netclient_&
 	else
 		if [[ $noai = 0 ]]; then
-			ai_&
+			splayers=$((players-1))
+			for ((psp=0;psp<$splayers;psp++)); do
+				((players++))
+				memory_ pcs
+				ai_&
+			done
 		fi
 	fi
 	while [[ $turn_lock = 0 ]]; do
@@ -173,10 +185,10 @@ function main_ {
 			points=$(( points + ( 1000 + ( 100 * aikilled ) ) ))
 			rm -rf ./data/shot ./data/tlock
 			mkdir data/shot
-			echo -e "\e[?12l\e[?25h"
+			tput cnorm
 			stty $oldstty
 			shop_
-			echo -e "\e[?25l"
+			tput civis
 			stty -echo -icanon time 0 min 0
 			maxhealth[1]=$(( health + ( 5 * aikilled ) ))
 			memory_ sh 0 ${maxhealth[0]}
@@ -225,7 +237,8 @@ function checkblock_ {
 		if [[ $1 = "-n" ]]; then
 			:
 		else
-			if [[ "$blockin" = "${cblock[2]}" ]]; then	
+			if [[ "$blockin" = "${cblock[2]}" ]] && [[ ${pos[1]} -ge $((waterlvl-1)) ]]; then
+				log_ 0 "splashing pos1: ${pos[1]} wlvl: $waterlvl"
 				animation_ splash&
 				#echo "af_add equalizer=0:0:0:0:0:-12:-12:-12:-12:-12" > data/mcontrol
 			elif [[ "$blockin" = "_" ]]; then
@@ -391,7 +404,7 @@ function title_screen_ {
 				settings_ menu
 			elif [[ $sel = 1 ]]; then
 				st_cleanup_
-				echo -e "\e[?25l"
+				tput civis
 				((rlc=1))
 				st_ini_ $LINES $COLS
 				main_
@@ -768,6 +781,7 @@ function settings_ {
 	fi
 }
 function ai_ {
+	aisymbol=(" " " " % @ ^ + = ¤  % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤)
 	if [[ $1 = die ]]; then
 		if [[ $(memory_ lh $aiid) -lt 1 ]]; then
 			weapon_radius[$weapon]=9
@@ -777,17 +791,37 @@ function ai_ {
 			break
 		fi
 		return
+	elif [[ $1 = closest ]]; then
+		memory_ pcl
+		closest=0
+		mdist=999999
+		for ac in $(ls data/pos); do
+			tpos=($(cat data/pos/$ac))
+			dist=$(( ( ${tpos[0]} - ${pos[0]} ) + ( ${tpos[1]} - ${pos[1]} ) ))
+			if [[ $dist -lt $mdist ]] && [[ $aiid != ${ac/_/} ]]; then
+				closest=${ac/_/}
+				mdist=$dist
+			fi
+		done
+		echo "$closest"
+		return
 	fi
+
 	#initialize the ai, make sure it spawns at a different location
 	aiid=$((players-1))
+	weapon=${aiweaponchoice[$((RANDOM%${#aiweaponchoice[@]}))]}
+
+	if [[ aiid -gt 62 ]]; then
+		aiidvis="-"
+	fi
+	cockpit=("${aisymbol[$aiid]}" "${aisymbol[$aiid]}")
 	ai_tick=${ai_tick[$((RANDOM%${#ai_tick[@]}))]}
 	memory_ sh $aiid ${maxhealth[0]}
 	mkdir -p data/ailock
 	touch data/ailock/$aiid
 	isai=true
 	shots_fired=1000
-	weapon=0
-	mweapon_ammo[0]=45
+	mweapon_ammo[$weapon]=45
 	epos=($((RANDOM%$((${surface[1]}-2))+2)) $(( surface[0] - ( surface[0] / 4 ) )) )
 	while [[ ${epos[0]} -ge $((${pos[0]}-2)) ]] && [[ ${epos[0]} -le $((${pos[0]}+2)) ]]; do
 			epos[0]=$((RANDOM%$((${surface[1]}-2))+2))
@@ -796,23 +830,33 @@ function ai_ {
 	pos=(${epos[@]})
 	player_color=$enemy_color
 
+	target=0
+	lastTargetChange=0
 	while [[ -f data/ailock/$aiid ]]; do
+		if [[ $lastTargetChange = 0 ]]; then
+			closest=$(ai_ closest)
+			target=$closest
+			lastTargetChange=13
+		else
+			((lastTargetChange--))
+		fi
 		memory_ pcl
 		checkblock_
 		ai_ die
 		memory_ ml
 		memory_ ps $aiid
 		moldpos=(${pos[@]})
-		ppos=($(memory_ pl 0))
+		ppos=($(memory_ pl $target))
 		edist=$(echo $((${ppos[0]}-${pos[0]})) | sed 's/-//g')
-		if [[ $edist -lt 11 ]] && [[ $edist -gt 9 ]]; then
+		pdist=$((RANDOM%4+9))
+		if [[ $edist -lt $((pdist+2)) ]] && [[ $edist -gt $((pdist-2)) ]]; then
 			if [[ $((${ppos[0]}-${pos[0]})) -lt 0 ]]; then
-				while [[ $angle != 135 ]] && [[ -f data/ailock/$aiid ]]; do
+				while [[ $angle != $((weapon_aiprefang[$weapon]+90)) ]] && [[ -f data/ailock/$aiid ]]; do
 					if [[ $edist -lt 11 ]] && [[ $edist -gt 9 ]]; then
 						ai_ die
-						if [[ $angle -lt 135 ]]; then
+						if [[ $angle -lt $((weapon_aiprefang[$weapon]+90)) ]]; then
 							adjust_angle_ 1 ai
-						elif [[ $angle -gt 135 ]]; then
+						elif [[ $angle -gt $((weapon_aiprefang[$weapon]+90)) ]]; then
 							adjust_angle_ 0 ai
 						fi
 						sleep $ai_tick
@@ -821,12 +865,12 @@ function ai_ {
 					fi
 				done
 			elif [[ $((${ppos[0]}-${pos[0]})) -gt 0 ]]; then
-				while [[ $angle != 45 ]] && [[ -f data/ailock/$aiid ]]; do
+				while [[ $angle != ${weapon_aiprefang[$weapon]} ]] && [[ -f data/ailock/$aiid ]]; do
 					if [[ $edist -lt 11 ]] && [[ $edist -gt 9 ]]; then
 						ai_ die
-						if [[ $angle -lt 45 ]]; then
+						if [[ $angle -lt ${weapon_aiprefang[$weapon]} ]]; then
 							adjust_angle_ 1 ai
-						elif [[ $angle -gt 45 ]]; then
+						elif [[ $angle -gt ${weapon_aiprefang[$weapon]} ]]; then
 							adjust_angle_ 0 ai
 						fi
 						sleep $ai_tick
@@ -841,7 +885,7 @@ function ai_ {
 				mweapon_ammo[$weapon]=$((${mweapon_ammo[$weapon]}-1))
 			fi
 			memory_ sl
-		elif [[ $edist -ge 10 ]]; then
+		elif [[ $edist -ge $pdist ]]; then
 			if [[ $((${ppos[0]}-${pos[0]})) -lt 0 ]]; then
 				pos[0]=$((${pos[0]}-1))
 				direction="l"
@@ -851,7 +895,7 @@ function ai_ {
 				direction="r"
 				update-wheels_
 			fi
-		elif [[ $edist -le 9 ]]; then
+		elif [[ $edist -le $((pdist-1)) ]]; then
 			if [[ $((${ppos[0]}-${pos[0]})) -lt 0 ]]; then
 				direction="r"
 				update-wheels_
@@ -905,6 +949,12 @@ function generate-map_ {
 	if [[ -z $waterlvl ]]; then
 		waterlvl=10
 	fi
+	if [[ -z $hmod ]]; then
+		hmod=5
+	fi
+	if [[ -z $height ]]; then
+		height=$((RANDOM%$((${surface[0]}/4))+$((${surface[0]}/5))))
+	fi
 	hdir=1
 	border="+-"
 	treeplace=(0 0 0)
@@ -921,11 +971,11 @@ function generate-map_ {
 			eval map$i[$j]="_"
 		done
 	done
-	height=$((RANDOM%$((${surface[0]}/4))+$((${surface[0]}/5))))
+
 	lhc=0
 	if [[ $height -lt 5 ]]; then
 		height=5
-	elif [[ $height -ge $((${surface[0]}/4)) ]]; then
+	elif [[ $height -ge $((${surface[0]}/4)) ]] && [[ $hmod = 5 ]]; then
 		height=$((${surface[0]}/4))
 	fi
 	[[ $silent = false ]]&&echo ""
@@ -966,7 +1016,7 @@ function generate-map_ {
 				fi
 			done
 		fi
-		if [[ $((RANDOM%4+lhc)) -ge 5 ]]; then
+		if [[ $((RANDOM%4+lhc)) -ge $hmod ]]; then
 			if [[ $((RANDOM%3)) = 0 ]]; then
 				hdir=$((RANDOM%2))
 			fi
@@ -977,7 +1027,7 @@ function generate-map_ {
 			fi
 			if [[ $height -lt 5 ]]; then
 				height=5
-			elif [[ $height -ge $((${surface[0]}/2)) ]]; then
+			elif [[ $height -ge $((${surface[0]}/2)) ]] && [[ $hmod = 5 ]]; then
 				height=$((${surface[0]}/2))
 			fi
 			lhc=$((RANDOM%2))
@@ -985,6 +1035,7 @@ function generate-map_ {
 			((lhc++))
 		fi
 	done
+
 	[[ $silent = false ]]&&echo -e "\ndone"
 	if [[ $1 != ds ]]; then
 		memory_ ms mapgen
@@ -1003,7 +1054,9 @@ function input_ {
 		animation_ fall
 		return
 	fi
-	memory_ ps 0
+	if [[ $ghost = 0 ]]; then
+		memory_ ps 0
+	fi
 	moldpos=(${pos[@]})
 	if [[ -n $key ]]; then
 		if [[ $key = [${controls[0]}] ]]; then
@@ -1047,7 +1100,7 @@ function input_ {
 			rm -rf ./data/tlock
 			rm -rf ./data/ailock
 			st_cleanup_
-			echo -e "\e[?25l"
+			tput civis
 			((rlc++))
 			st_ini_ $LINES $COLS
 			main_
@@ -1057,10 +1110,10 @@ function input_ {
 				display_
 			elif [[ $key = ${devcontrols[2]} ]]; then
 				rm -rf data/tlock/*
-				echo -e "\e[?12l\e[?25h"
+				tput cnorm
 				echo -en "\033[2;2H"
 				interactive_
-				echo -e "\e[?25l"
+				tput civis
 				stty -echo -icanon time 0 min 0
 				display_
 			elif [[ $key = ${devcontrols[3]} ]]; then
@@ -1365,7 +1418,7 @@ function display_stats_ {
 	echo -e "\033[0m\033[5;$((${surface[1]}-27))H+----------------+-----------+"
 }
 function burn_ {
-	if [[ $1 = spread ]]; then
+	if [[ $1 = spread ]] && [[ -d data/lit ]]; then
 		if [[ ! -f data/lit/waiting ]]; then
 			burn_ wait&
 		fi
@@ -1410,10 +1463,10 @@ function burn_ {
 	elif [[ $1 = wait ]]; then
 		touch data/lit/waiting
 		if [[ $sound -gt 0 ]]; then
-			mplayer -loop 0 audio/fx/burn.ogg 2>/dev/null >/dev/null&
+			mplayer -loop 1 audio/fx/burn.ogg 2>/dev/null >/dev/null&
 		fi
 		litcount=0
-		while true; do
+		while [[ -d data/lit ]]; do
 			oldlitcount=$litcount
 			sleep 0.5
 			litcount=$(ls -l data/lit | wc -l)
@@ -1421,6 +1474,9 @@ function burn_ {
 				break
 			fi
 		done
+		if [[ ! -d data/lit ]]; then
+			return
+		fi
 		memory_ ml
 		for i in $(ls data/lit/); do
 			if [[ $i != waiting ]]; then
@@ -1430,7 +1486,9 @@ function burn_ {
 		done
 		memory_ ms
 		rm data/lit/*
-		kill $!
+		if [[ $sound -gt 0 ]]; then
+			kill $!
+		fi
 	fi
 }
 function display_ {
@@ -1545,14 +1603,14 @@ function game_over_ {
 	rm -rf ./data/ailock
 	sleep 2
 	st_cleanup_
-	echo -e "\e[?25l"
+	tput civis
 	st_ini_ $LINES $COLS
 	((rlc++))
 	main_
 }
 function st_cleanup_ {
 	rm -rf ./data/ailock ./data/pc ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard ./data/lit ./data/loadp
-	echo -e "\e[?12l\e[?25h"
+	tput cnorm
 }
 function st_launch_ {
 	if [[ -z $1 ]]; then

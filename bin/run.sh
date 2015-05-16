@@ -77,11 +77,26 @@ function arg_ {
 	elif [[ "$1" = "-treechance" ]]; then
 		treechance=$2
 		shiftam=2
+	elif [[ "$1" = "-hmod" ]]; then
+		hmod=$2
+		shiftam=2
+	elif [[ "$1" = "-height" ]]; then
+		height=$2
+		shiftam=2
 	elif [[ "$1" = "-noai" ]]; then
 		noai=1
 		shiftam=1
+	elif [[ "$1" = "-ghost" ]]; then
+		ghost=1
+		shiftam=1
 	elif [[ "$1" = "-h" ]]; then
 		help_
+	elif [[ "$1" = "-p" ]]; then
+		players=$2
+		shiftam=2
+	elif [[ "$1" = "-notitle" ]]; then
+		title_screen=false
+		shiftam=1
 	else
 		echo "Error, Unknown Flag $1, Try -h"
 		exit
@@ -96,26 +111,30 @@ function reload_ {
 	import_ shell-tanks.sh $1 $LINES $COLS
 }
 function help_ {
-	echo "usage: run.sh, (passing any arguments that change settings such as -d will prevent settings from being parsed)"
-	echo " -h: help"
+	echo "usage: run.sh, (passing any arguments will prevent settings file from being parsed)"
+	echo " -h: print this message and exit"
 	echo " -l: log to file"
 	echo " -lf: specify log file"
 	echo " -v: log to stty, turned on by -i"
+	echo " -i: interactive mode, turns on logging to stty by default"
 	echo " -r: reset settings / clear all data"
 	echo " -d: developer mode, enables a few top secret cheats"
-	echo " -i: interactive mode, turns on logging to stty by default"
 	echo " -m: mute all audio"
-	echo " -waterlvl <lvl>: set water level"
-	echo " -treechance <chance>: set tree density, lower number = higher density"
-	echo " -noai: in human vs computer, disables ai"
-	echo " -n <client id> <peer ip>: turns on network mode, client id"
-	echo "     must be a 1 or 0.  Client 0 will generate the map, and"
-	echo "     client 1 will listen for a finished map, so client 1  "
-	echo "     needs to be started before client 0.  If no ip is supplied,"
-	echo "     it reverts to 127.0.0.1.  This feature -i-s--v-e-r-y--b-u-g-g-y- dont work!"
-	echo " -g <tank, terrain>: specify a graphics file for either the tank "
-	echo "     (located in bin/graphic/tank/) or terrain (located in bin/"
-	echo "     graphic/terrain/"
+	echo " -fx: mute theme and play only fx"
+	echo " -g <tank, terrain> <file>: specify a graphics file for either the tank (located in bin/graphic/tank/) or terrain (located in bin/graphic/terrain/"
+	echo " -waterlvl <int>: set water level"
+	echo " -treechance <int>: set tree density, lower number = higher density"
+	echo " -hmod <int>: the integer that sets how crazy terrain is.  A higher number means flatter terain"
+	echo " -height <int>: set the base height of terrain generation"
+	echo " -noai: disables ai from automatically spawning"
+	echo " -p <int>: the number of players, taking the human-controlled player into account"
+	echo " -ghost: disables writing of position data by human-controlled player i.e. ai's won't track you"
+	echo " -notitle: skips the title screen"
+	#echo " -n <client id> <peer ip>: turns on network mode, client id"
+	#echo "     must be a 1 or 0.  Client 0 will generate the map, and"
+	#echo "     client 1 will listen for a finished map, so client 1  "
+	#echo "     needs to be started before client 0.  If no ip is supplied,"
+	#echo "     it reverts to 127.0.0.1.  This feature -i-s--v-e-r-y--b-u-g-g-y- dont work!"
 	exit
 }
 function ini_ {
@@ -128,6 +147,7 @@ function ini_ {
 	mkdir -p data
 	sound=2
 	logging=2
+	ghost=0
 	loadsettings=1
 	noai=0
 	network=false
@@ -194,7 +214,7 @@ function cleanup_ {
 }
 function interactive_ {
 	stty $oldstty
-	echo -en "\e[?12l\e[?25h"
+	tput cnorm
 	i_history=(" ")
 	hnum=0
 	echo 'shell-tanks version '$(cat ../ver.txt)', Copyright (C) 2015 Stone Tickle'

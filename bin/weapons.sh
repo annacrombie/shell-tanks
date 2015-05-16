@@ -17,6 +17,9 @@ weapon_attributes=(
 	
 	"speed"
 	"time"
+
+	"aiusable"
+	"aiprefang"
 )
 function load_weaps_ {
 	default_weaps_
@@ -34,6 +37,12 @@ function load_weaps_ {
 		wcon=($(echo ${weapon_icon_r[$i]} | sed 's/./& /g;s/</>/g;s/>/</g;s/[{]/\}/g;s/[}]/\{/g;s/[]]/\[/g;s/[[]/\]/g;s/[)]/\(/g;s/[(]/\)/g;s/\//\\/g;s/[\]/\//g'))
 		weapon_icon_l[$i]="${wcon[2]}${wcon[1]}${wcon[0]}"
 	done
+	for ((i=0;i<${#weapon_aiusable[@]};i++)); do
+		if [[ ${weapon_aiusable[$i]} = "true" ]]; then
+			aiweaponchoice+=("$i")
+		fi
+	done
+	log_ 0 "aiweaponchoice: ${aiweaponchoice[@]}"
 	mweapon_ammo[0]=45
 	shottype=${weapon_type[0]}
 }
