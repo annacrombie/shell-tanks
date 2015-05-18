@@ -81,12 +81,8 @@ function st_ini_ {
 	direction="r"
 	isai=false
 	aikilled=0
-	if [[ -z $players ]]; then
-		players=2
-	fi
-	if [[ $title_screen != false ]]; then
-		title_screen = true
-	fi
+	[[ -z $players ]]&&players=2
+	[[ -z $title_screen ]]&&title_screen=true
 
 	weapon=0
 	load_weaps_
@@ -163,24 +159,17 @@ function main_ {
 	fi
 	turn_lock=0
 	memory_ sh 0 ${maxhealth[0]}
-	memory_ sh 1 ${maxhealth[1]}
 	memory_ pcs
 	display_
 	update-wheels_
 	if [[ $network = true ]]; then
 		netclient_&
 	else
-		if [[ $noai = 0 ]]; then
-			splayers=$((players-1))
-			for ((psp=0;psp<$splayers;psp++)); do
-				((players++))
-				memory_ pcs
-				ai_&
-			done
-		fi
+		ai_ spawn
 	fi
+	display_health_
 	while [[ $turn_lock = 0 ]]; do
-		if [[ $players = 2 ]] && [[ $(memory_ lh 1) -lt 1 ]]; then
+		if [[ $(ls data/pos | wc -l) = "       1" ]]; then
 			((aikilled++))
 			points=$(( points + ( 1000 + ( 100 * aikilled ) ) ))
 			rm -rf ./data/shot ./data/tlock
@@ -192,11 +181,10 @@ function main_ {
 			stty -echo -icanon time 0 min 0
 			maxhealth[1]=$(( health + ( 5 * aikilled ) ))
 			memory_ sh 0 ${maxhealth[0]}
-			memory_ sh 1 ${maxhealth[1]}
 			memory_ ml
 			display_
 			mainlogo_
-			ai_&
+			ai_ spawn
 		fi
 		if [[ $(memory_ lh 0) -lt 1 ]]; then
 			weapon_radius[$weapon]=13
@@ -781,12 +769,22 @@ function settings_ {
 	fi
 }
 function ai_ {
-	aisymbol=(" " " " % @ ^ + = ¤  % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤ % @ ^ + = ¤)
-	if [[ $1 = die ]]; then
+	if [[ $1 = spawn ]]; then
+		if [[ $noai = 0 ]]; then
+			splayers=$((players-1))
+			for ((psp=0;psp<$splayers;psp++)); do
+				memory_ pcs
+				ai_&
+			done
+		fi
+		return
+	elif [[ $1 = die ]]; then
 		if [[ $(memory_ lh $aiid) -lt 1 ]]; then
-			weapon_radius[$weapon]=9
-			weapon_destruction[$weapon]=2
-			explosion_ ${pos[@]} hard
+			if [[ $2 != quiet ]]; then
+				weapon_radius[$weapon]=9
+				weapon_destruction[$weapon]=2
+				explosion_ ${pos[@]} hard
+			fi
 			rm -rf data/ailock/$aiid data/pos/_$aiid data/health/_$aiid
 			break
 		fi
@@ -808,15 +806,13 @@ function ai_ {
 	fi
 
 	#initialize the ai, make sure it spawns at a different location
-	aiid=$((players-1))
+	aiid=$RANDOM
 	weapon=${aiweaponchoice[$((RANDOM%${#aiweaponchoice[@]}))]}
-
-	if [[ aiid -gt 62 ]]; then
-		aiidvis="-"
-	fi
-	cockpit=("${aisymbol[$aiid]}" "${aisymbol[$aiid]}")
+	aisymbol=(% @ ^ + = ¤)
+	cchoice=$((RANDOM%${#aisymbol[@]}))
+	cockpit=("${aisymbol[$cchoice]}" "${aisymbol[$cchoice]}")
 	ai_tick=${ai_tick[$((RANDOM%${#ai_tick[@]}))]}
-	memory_ sh $aiid ${maxhealth[0]}
+	memory_ sh $aiid ${maxhealth[1]}
 	mkdir -p data/ailock
 	touch data/ailock/$aiid
 	isai=true
@@ -910,6 +906,7 @@ function ai_ {
 		place-items_
 		sleep $ai_tick
 	done
+	ai_ die quiet
 }
 function draw_ {
 	if [[ $1 != -d ]]; then
@@ -1117,10 +1114,10 @@ function input_ {
 				stty -echo -icanon time 0 min 0
 				display_
 			elif [[ $key = ${devcontrols[3]} ]]; then
-				if [[ -f ./data/ailock ]]; then
+				if [[ -d ./data/ailock ]]; then
 					rm -rf ./data/ailock
 				else
-					ai_&
+					ai_ spawn
 				fi
 			elif [[ $key = ${devcontrols[4]} ]]; then
 				load_weaps_
@@ -1382,8 +1379,19 @@ function explosion_ {
 	fi
 }
 function display_health_ {
+	aihealthcounted=0
+	totalaihealth=0
+	for healths in $(ls data/health); do
+		if [[ $i != _0 ]]; then
+			naihealth=$(. data/health/$healths;echo ${h_g[0]})
+			if [[ $naihealth -gt 0 ]]; then
+				totalaihealth=$(( totalaihealth + $naihealth ))
+			fi
+			((aihealthcounted++))
+		fi
+	done
 	echo -e "\033[0m\033[1;1H+-HEALTH-------+--------------+"
-	echo -e "\033[0m\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( $(memory_ lh 1) * 100 ) / maxhealth[1] )))% |"
+	echo -e "\033[0m\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( totalaihealth * 100 ) / (maxhealth[1]*aihealthcounted) )))% |"
 	echo -e "\033[0m\033[3;1H+--------------+--------------+"
 }
 function switch_weapon_ {
