@@ -72,7 +72,7 @@ function st_ini_ {
 	maxhealth=(20 20)
 	smod=0
 	angle=90
-	speed=0.1
+	speed=0.08
 	ai_tick=(0.4 0.3 0.2 0.1)
 	points=0
 	wheels=0
@@ -160,14 +160,13 @@ function main_ {
 	turn_lock=0
 	memory_ sh 0 ${maxhealth[0]}
 	memory_ pcs
-	display_
+	display_ -nh
 	update-wheels_
 	if [[ $network = true ]]; then
 		netclient_&
 	else
 		ai_ spawn
 	fi
-	display_health_
 	while [[ $turn_lock = 0 ]]; do
 		if [[ $(ls data/pos | wc -l) = "       1" ]]; then
 			((aikilled++))
@@ -195,14 +194,13 @@ function main_ {
 			break
 		fi
 		memory_ ck 0 ms
-		log_ 0 "pospre: ${pos[@]}"
-		
-		log_ 0 "pospost: ${pos[@]}"
 		if [[ $plit = true ]]; then
 			place-items_
 		fi
 		plit=true
-		sleep $(echo "$speed - $smod" | bc -l)
+		if [[ $speed != 0 ]]; then
+			sleep $(echo "$speed - $smod" | bc -l)
+		fi
 		checkblock_
 		input_
 		if [[ $network = true ]]; then
@@ -215,7 +213,6 @@ function checkblock_ {
 	eval "blockin=\${map${pos[1]}[${pos[0]}]}"
 	oblock=($((pos[0]-1)) $((pos[0]+1)))
 	eval "oblockin=(\${map${pos[1]}[${oblock[0]}]} \${map${pos[1]}[${oblock[1]}]})"
-	log_ 0 "${oblockin[0]} $blockin ${oblockin[1]}"
 	if [[ $1 = ip ]] && [[ ${blockin//\\033\[3[0-9]m/} = $iblock ]] && [[ ${oblockin[0]//\\033\[3[0-9]m/} = $iblock ]] && [[ ${oblockin[1]//\\033\[3[0-9]m/} = $iblock ]]; then
 		return 1
 	elif [[ $1 = ip ]]; then
@@ -468,7 +465,7 @@ function place-items_ {
 				if [[ ! -d ./data/shot ]]; then
 					break
 				fi
-				memory_ ml
+				memory_ ck
 				if [[ $3 = 0 ]]; then
 					shot_x=$((i+${pos[0]}+1))
 					oldshot_x=$((shot_x-1))
@@ -813,6 +810,7 @@ function ai_ {
 	cockpit=("${aisymbol[$cchoice]}" "${aisymbol[$cchoice]}")
 	ai_tick=${ai_tick[$((RANDOM%${#ai_tick[@]}))]}
 	memory_ sh $aiid ${maxhealth[1]}
+	display_health_
 	mkdir -p data/ailock
 	touch data/ailock/$aiid
 	isai=true
@@ -839,7 +837,7 @@ function ai_ {
 		memory_ pcl
 		checkblock_
 		ai_ die
-		memory_ ml
+		memory_ ck
 		memory_ ps $aiid
 		moldpos=(${pos[@]})
 		ppos=($(memory_ pl $target))
@@ -875,7 +873,7 @@ function ai_ {
 					fi
 				done
 			fi
-			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 5 ]] && [[ $((SECONDS+(${weapon_cooldown[$weapon]}*-1))) -gt $last_shot ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
+			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 5 ]] && [[ $((SECONDS+(${weapon_cooldown[$weapon]}*-1))) -gt $((last_shot+2)) ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
 				((shots_fired++))
 				fire_&last_shot=$SECONDS
 				mweapon_ammo[$weapon]=$((${mweapon_ammo[$weapon]}-1))
@@ -1041,7 +1039,8 @@ function generate-map_ {
 function input_ {
 	read discard
 	read -s -n 1 key
-	memory_ ml
+	#time memory_ ml
+	#echo "memory_ ml ^" 1>&2
 	if [[ -f data/loadp ]]; then
 		rm -rf data/loadp
 		log_ 0 "changing pos"
@@ -1379,20 +1378,34 @@ function explosion_ {
 	fi
 }
 function display_health_ {
-	aihealthcounted=0
-	totalaihealth=0
+	aihealthcounted=1
+	unset healthpercents
+	unset healthlabels
 	for healths in $(ls data/health); do
-		if [[ $i != _0 ]]; then
-			naihealth=$(. data/health/$healths;echo ${h_g[0]})
-			if [[ $naihealth -gt 0 ]]; then
-				totalaihealth=$(( totalaihealth + $naihealth ))
-			fi
+		if [[ $healths != "_0" ]]; then
+			. data/health/$healths
+			healthpercents[$aihealthcounted]=$(( (h_g[0]*100)/maxhealth[1]))
+			healthlabels[$aihealthcounted]="ai$healths"
 			((aihealthcounted++))
 		fi
 	done
-	echo -e "\033[0m\033[1;1H+-HEALTH-------+--------------+"
-	echo -e "\033[0m\033[2;1H| You  : $(printf "%4s" $(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] )))% | Enemy: $(printf "%4s" $(( ( totalaihealth * 100 ) / (maxhealth[1]*aihealthcounted) )))% |"
-	echo -e "\033[0m\033[3;1H+--------------+--------------+"
+	log_ 0 "$aihealthcounted $totalaihealth"
+	healthpercents[0]=$(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] ))
+	healthlabels[0]="you"
+	for ((hps=0;hps<${#healthpercents[@]};hps++)); do
+		if [[ ${healthpercents[$hps]} -ge 70 ]]; then
+			healthpercents[$hps]="$c_green$(printf "%5s" ${healthpercents[$hps]})$c_no"
+		elif [[ ${healthpercents[$hps]} -ge 30 ]]; then
+			healthpercents[$hps]="$c_yellow$(printf "%5s" ${healthpercents[$hps]})$c_no"
+		else
+			healthpercents[$hps]="$c_red$(printf "%5s" ${healthpercents[$hps]})$c_no"
+		fi
+	done
+	echo -e "\033[0m\033[1;1H+-HEALTH------------+"
+	for ((hdis=0;hdis<${#healthpercents[@]};hdis++)); do
+		echo -e "\033[0m\033[$((2+hdis));1H| $(printf "%9s" ${healthlabels[$hdis]}): ${healthpercents[$hdis]}% |"
+	done
+	echo -e "\033[0m\033[$((2+hdis));1H+-------------------+"
 }
 function switch_weapon_ {
 	log_ 0 "switch_weapon_: switching $1"
@@ -1444,9 +1457,8 @@ function burn_ {
 		for ((i=0;i<${#sb[@]};i++)); do
 			if [[ -f data/lit/${sc[$i]} ]]; then
 				continue
-			fi
-			if [[ "${sb[$i]}" = "${cblock[3]}" ]] || [[ "${sb[$i]}" = "${cblock[4]}" ]] || [[ "${sb[$i]}" = "${cblock[5]}" ]]; then
-				sleep 0.4&&burn_ spread ${sc[$i]/_/ }&
+			elif [[ "${sb[$i]}" = "${cblock[3]}" ]] || [[ "${sb[$i]}" = "${cblock[4]}" ]] || [[ "${sb[$i]}" = "${cblock[5]}" ]]; then
+				sleep 0.3&&burn_ spread ${sc[$i]/_/ }&
 			fi
 		done
 	elif [[ $1 = light ]]; then
@@ -1463,12 +1475,13 @@ function burn_ {
 				fi
 			done
 			echo -e "\033[${invy/-/};$(($2+2))H${c_red}*"
-			sleep 0.2
+			sleep 0.08
 			echo -e "\033[${invy/-/};$(($2+2))H${c_yellow}*"
-			sleep 0.2
+			sleep 0.08
 		done
 		echo -e "\033[${invy/-/};$(($2+2))H "
 	elif [[ $1 = wait ]]; then
+		SECONDS=0
 		touch data/lit/waiting
 		if [[ $sound -gt 0 ]]; then
 			mplayer -loop 1 audio/fx/burn.ogg 2>/dev/null >/dev/null&
@@ -1510,7 +1523,9 @@ function display_ {
 	draw_ -d
 	place-items_ tank
 	display_stats_
-	display_health_
+	if [[ $1 != "-nh" ]]; then
+		display_health_
+	fi
 	if [[ $wastlock = true ]]; then
 		mainlogo_
 	fi
@@ -1564,7 +1579,7 @@ function memory_ {
 			done
 		fi
 		touch data/savingmap
-		echo "#$(date "+%s")$((RANDOM))" > ./data/ms
+		echo "msk=$(date "+%s")$((RANDOM))" > ./data/msk
 		for ((i=$((${surface[0]}-1));i>-1;i--)); do
 			eval "print=\${map$i[@]}"
 			echo 'map'$i'=("'$(echo $print | sed 's/ /" "/g')'")' >> ./data/ms
@@ -1589,13 +1604,14 @@ function memory_ {
 			echo "${h_g[0]}"
 		fi
 	elif [[ $1 = ck ]]; then
-		if [[ -z ${omt[$2]} ]]; then
-			omt[$2]=$(cat ./data/$3 | head -n 1)
+		if [[ -z $msk ]]; then
+			. data/msk
 		fi
-		if [[ $(cat ./data/$3 | head -n 1) != ${omt[$2]} ]]; then
+		oldmsk=$msk
+		. data/msk
+		if [[ $msk != $oldmsk ]]; then
 			memory_ ml
 		fi
-		omt[$2]=$(cat ./data/$3 | head -n 1)
 	elif [[ $1 = pcl ]]; then
 		. data/pc
 	elif [[ $1 = pcs ]]; then
