@@ -72,11 +72,12 @@ function st_ini_ {
 	maxhealth=(20 20)
 	smod=0
 	angle=90
-	speed=0.08
+	if [[ -z $speed ]]; then
+		speed=0.08
+	fi
 	ai_tick=(0.4 0.3 0.2 0.1)
 	points=0
 	wheels=0
-	momentum=0
 	plit=true
 	direction="r"
 	isai=false
@@ -168,7 +169,7 @@ function main_ {
 		ai_ spawn
 	fi
 	while [[ $turn_lock = 0 ]]; do
-		if [[ $(ls data/pos | wc -l) = "       1" ]]; then
+		if [[ -d data/pos ]] && [[ -z $noshop ]] && [[ $(ls data/pos | wc -l) = "       1" ]]; then
 			((aikilled++))
 			points=$(( points + ( 1000 + ( 100 * aikilled ) ) ))
 			rm -rf ./data/shot ./data/tlock
@@ -783,6 +784,7 @@ function ai_ {
 				explosion_ ${pos[@]} hard
 			fi
 			rm -rf data/ailock/$aiid data/pos/_$aiid data/health/_$aiid
+			display_health_
 			break
 		fi
 		return
@@ -873,7 +875,7 @@ function ai_ {
 					fi
 				done
 			fi
-			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 5 ]] && [[ $((SECONDS+(${weapon_cooldown[$weapon]}*-1))) -gt $((last_shot+2)) ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
+			if [[ $(($(ls -l data/shot | wc -l | awk '{print $1}')-1)) -le 5 ]] && [[ $((SECONDS+(${weapon_cooldown[$weapon]}*-1))) -gt $((last_shot+3)) ]] && [[ ${mweapon_ammo[$weapon]} -gt 0 ]]; then
 				((shots_fired++))
 				fire_&last_shot=$SECONDS
 				mweapon_ammo[$weapon]=$((${mweapon_ammo[$weapon]}-1))
@@ -1389,7 +1391,17 @@ function display_health_ {
 			((aihealthcounted++))
 		fi
 	done
-	log_ 0 "$aihealthcounted $totalaihealth"
+	if [[ ! -f data/healthcount ]]; then
+		echo "healthcount=$aihealthcounted" > data/healthcount
+		healthcount=$aihealthcounted
+	else
+		. data/healthcount
+	fi
+	if [[ $aihealthcounted -lt $healthcount ]]; then
+		emptyhealth=$((healthcount-aihealthcounted))
+	else
+		emptyhealth=0
+	fi
 	healthpercents[0]=$(( ( $(memory_ lh 0) * 100 ) / maxhealth[0] ))
 	healthlabels[0]="you"
 	for ((hps=0;hps<${#healthpercents[@]};hps++)); do
@@ -1401,11 +1413,15 @@ function display_health_ {
 			healthpercents[$hps]="$c_red$(printf "%5s" ${healthpercents[$hps]})$c_no"
 		fi
 	done
-	echo -e "\033[0m\033[1;1H+-HEALTH------------+"
+	healthdisplay="\033[0m\033[1;1H+-HEALTH------------+"
 	for ((hdis=0;hdis<${#healthpercents[@]};hdis++)); do
-		echo -e "\033[0m\033[$((2+hdis));1H| $(printf "%9s" ${healthlabels[$hdis]}): ${healthpercents[$hdis]}% |"
+		healthdisplay="$healthdisplay\033[0m\033[$((2+hdis));1H| $(printf "%9s" ${healthlabels[$hdis]}): ${healthpercents[$hdis]}% |"
 	done
-	echo -e "\033[0m\033[$((2+hdis));1H+-------------------+"
+	healthdisplay="$healthdisplay\033[0m\033[$((2+hdis));1H+-------------------+"
+	for ((hdit=0;hdit<${emptyhealth};hdit++)); do
+		healthdisplay="$healthdisplay\033[0m\033[$((3+hdis+hdit));1H|                    "
+	done
+	echo -e "$healthdisplay"
 }
 function switch_weapon_ {
 	log_ 0 "switch_weapon_: switching $1"
@@ -1633,7 +1649,8 @@ function game_over_ {
 	main_
 }
 function st_cleanup_ {
-	rm -rf ./data/ailock ./data/pc ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard ./data/lit ./data/loadp
+	rm -rf ./data/ailock ./data/pc ./data/pos ./data/health ./data/tlock ./data/ms ./data/shot ./data/netlock ./data/mcontrol ./data/heard ./data/lit ./data/loadp ./data/msk ./data/healthcount
+	audio_ -s
 	tput cnorm
 }
 function st_launch_ {

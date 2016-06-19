@@ -97,6 +97,12 @@ function arg_ {
 	elif [[ "$1" = "-notitle" ]]; then
 		title_screen=false
 		shiftam=1
+	elif [[ "$1" = "-mvsleep" ]]; then
+		speed=$2
+		shiftam=2
+	elif [[ "$1" = "-noshop" ]]; then
+		noshop=1
+		shiftam=1
 	else
 		echo "Error, Unknown Flag $1, Try -h"
 		exit
@@ -111,30 +117,45 @@ function reload_ {
 	import_ shell-tanks.sh $1 $LINES $COLS
 }
 function help_ {
+	echo "Warning: Bash was never meant to be used for something like this and this program will eat tons of memory.  Use at your own risk"
 	echo "usage: run.sh, (passing any arguments will prevent settings file from being parsed)"
+	echo " Utilities"
 	echo " -h: print this message and exit"
 	echo " -l: log to file"
 	echo " -lf: specify log file"
 	echo " -v: log to stty, turned on by -i"
 	echo " -i: interactive mode, turns on logging to stty by default"
 	echo " -r: reset settings / clear all data"
+	echo ""
+	echo " Settings / Gameplay"
 	echo " -d: developer mode, enables a few top secret cheats"
 	echo " -m: mute all audio"
 	echo " -fx: mute theme and play only fx"
+	echo " -noai: disables ai from automatically spawning"
+	echo " -p <int>: the number of players, taking the human-controlled player into account e.g. 2 players means one ai and you"
+	echo " -ghost: disables writing of position data by human-controlled player i.e. ai's won't track you"
+	echo " -notitle: skips the title screen"
+	echo " -mvsleep <float>: the amount of seconds that the loop sleeps before you can move again.  Does not effect ais"
+	echo ""
+	echo " Terrain / Graphic Modifications"
 	echo " -g <tank, terrain> <file>: specify a graphics file for either the tank (located in bin/graphic/tank/) or terrain (located in bin/graphic/terrain/"
 	echo " -waterlvl <int>: set water level"
 	echo " -treechance <int>: set tree density, lower number = higher density"
 	echo " -hmod <int>: the integer that sets how crazy terrain is.  A higher number means flatter terain"
 	echo " -height <int>: set the base height of terrain generation"
-	echo " -noai: disables ai from automatically spawning"
-	echo " -p <int>: the number of players, taking the human-controlled player into account"
-	echo " -ghost: disables writing of position data by human-controlled player i.e. ai's won't track you"
-	echo " -notitle: skips the title screen"
-	#echo " -n <client id> <peer ip>: turns on network mode, client id"
-	#echo "     must be a 1 or 0.  Client 0 will generate the map, and"
-	#echo "     client 1 will listen for a finished map, so client 1  "
-	#echo "     needs to be started before client 0.  If no ip is supplied,"
-	#echo "     it reverts to 127.0.0.1.  This feature -i-s--v-e-r-y--b-u-g-g-y- dont work!"
+	echo ""
+	echo " Experimental / Buggy"
+	echo " -n <client id> <peer ip>: turns on network mode, client id"
+	echo "     must be a 1 or 0.  Client 0 will generate the map, and"
+	echo "     client 1 will listen for a finished map, so client 1  "
+	echo "     needs to be started before client 0.  If no ip is supplied,"
+	echo "     it reverts to 127.0.0.1.  This feature only really allows for movement"
+	echo ""
+	echo " Examples:"
+	echo " "
+	echo " -> 9-AI Battle on relatively flat ground:"
+	echo "    ./shell-tanks -ghost -notitle -p 10 -waterlvl 0 -treechance 1000 -hmod 10 -height 8"
+	echo "    This is really laggy  :^)"
 	exit
 }
 function ini_ {

@@ -4,13 +4,13 @@ function audio_ {
 		return 2
 	fi
 	audio_dir=$(pwd)
-	afbin=mplayer
-	if [[ -z $(which mplayer) ]]; then
+	afbin=mpv
+	if [[ -z $(which mpv) ]]; then
 		sound=0
-		log_ 1 "[audio] mplayer not installed, disabling audio"
+		log_ 1 "[audio] mpv not installed, disabling audio"
 		return 2
 	fi
-	loopAudio=1
+	loopAudio=no
 	stopAudio=0
 	if [[ -n $* ]]; then
 		while [[ -n $* ]]; do
@@ -18,7 +18,7 @@ function audio_ {
 				local stopAudio=1
 				shift
 			elif [[ $1 = -l ]]; then
-				local loopAudio=0
+				local loopAudio=inf
 				shift
 			elif [[ $1 = -t ]]; then
 				local audioType=$2
@@ -32,7 +32,7 @@ function audio_ {
 		return 0
 	fi
 	if [[ $stopAudio = 1 ]]; then
-		killall mplayer
+		killall mpv
 	fi
 	if [[ -f $audio_dir/audio/$audioType/${audioFiles[0]}.ogg ]]; then
 		for ((i=0;i<${#audioFiles[@]};i++)); do
@@ -41,7 +41,8 @@ function audio_ {
 			else
 				lAudio=1
 			fi
-			$afbin -loop $lAudio $audio_dir/audio/$audioType/${audioFiles[$i]}.ogg >/dev/null 2>/dev/null
+			$afbin -loop=$lAudio $audio_dir/audio/$audioType/${audioFiles[$i]}.ogg >/dev/null 2>/dev/null
+			log_ 0 "playing audio $audio_dir/audio/$audioType/${audioFiles[$i]}.ogg, -loop=$lAudio"
 		done&
 	else
 		return 0
